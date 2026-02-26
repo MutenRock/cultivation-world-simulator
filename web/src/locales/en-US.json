@@ -311,6 +311,7 @@
           "realm": "Realm",
           "origin": "Origin",
           "age": "Age",
+          "awakened_age": "Started Cultivation At",
           "hp": "HP",
           "gender": "Gender",
           "alignment": "Alignment",

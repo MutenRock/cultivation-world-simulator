@@ -131,11 +131,17 @@ def get_avatar_structured_info(avatar: "Avatar") -> dict:
          if r:
              born_region_name = r.name
 
+    start_age = None
+    if avatar.cultivation_start_month_stamp is not None:
+        start_age = (int(avatar.cultivation_start_month_stamp) - int(avatar.birth_month_stamp)) // 12
+
     info = {
         "id": avatar.id,
         "name": avatar.name,
         "origin": born_region_name,
         "born_region_id": avatar.born_region_id,
+        "cultivation_start_age": start_age,
+        "cultivation_start_month_stamp": int(avatar.cultivation_start_month_stamp) if avatar.cultivation_start_month_stamp else None,
         "gender": str(avatar.gender),
         "age": avatar.age.age,
         "lifespan": avatar.age.max_lifespan,

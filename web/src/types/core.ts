@@ -50,6 +50,8 @@ export interface AvatarDetail extends EntityBase {
   gender: string;
   age: number;
   origin: string;
+  cultivation_start_age?: number;
+  cultivation_start_month_stamp?: number;
   lifespan: number;
   nickname?: string;
   appearance: string; // 外貌描述

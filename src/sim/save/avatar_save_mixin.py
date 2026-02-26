@@ -66,6 +66,7 @@ class AvatarSaveMixin:
             "pos_x": self.pos_x,
             "pos_y": self.pos_y,
             "born_region_id": self.born_region_id,
+            "cultivation_start_month_stamp": int(self.cultivation_start_month_stamp) if self.cultivation_start_month_stamp is not None else None,
             
             # 修炼相关
             "age": self.age.to_dict(),

@@ -130,6 +130,9 @@ class Avatar(
     # [新增] 出身地ID
     born_region_id: Optional[int] = None
 
+    # 记录成为练气/开始修道的年月时间戳
+    cultivation_start_month_stamp: Optional[MonthStamp] = None
+
     # [新增] 关系开始时间缓存
     # Key: 对方Avatar ID, Value: 开始时的 MonthStamp (int)
     relation_start_dates: dict[str, int] = field(default_factory=dict)
