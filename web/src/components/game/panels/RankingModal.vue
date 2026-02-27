@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { NModal, NTabs, NTabPane, NTable, NSpin } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { worldApi } from '../../../api/modules/world'
+import { useUiStore } from '../../../stores/ui'
 
 const props = defineProps<{
   show: boolean
@@ -13,6 +14,17 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const uiStore = useUiStore()
+
+const openAvatarInfo = (id: string) => {
+  uiStore.select('avatar', id)
+  handleShowChange(false)
+}
+
+const openSectInfo = (id: string) => {
+  uiStore.select('sect', id)
+  handleShowChange(false)
+}
 
 const loading = ref(false)
 const rankings = ref<{
@@ -74,8 +86,11 @@ watch(() => props.show, (newVal) => {
             <tbody>
               <tr v-for="(item, index) in rankings.heaven" :key="item.id">
                 <td>{{ index + 1 }}</td>
-                <td>{{ item.name }}</td>
-                <td>{{ item.sect }}</td>
+                <td><a class="clickable-text" @click="openAvatarInfo(item.id)">{{ item.name }}</a></td>
+                <td>
+                  <a class="clickable-text" v-if="item.sect_id" @click="openSectInfo(item.sect_id)">{{ item.sect }}</a>
+                  <span v-else>{{ item.sect }}</span>
+                </td>
                 <td>{{ item.realm }} {{ item.stage }}</td>
                 <td>{{ item.power }}</td>
               </tr>
@@ -100,8 +115,11 @@ watch(() => props.show, (newVal) => {
             <tbody>
               <tr v-for="(item, index) in rankings.earth" :key="item.id">
                 <td>{{ index + 1 }}</td>
-                <td>{{ item.name }}</td>
-                <td>{{ item.sect }}</td>
+                <td><a class="clickable-text" @click="openAvatarInfo(item.id)">{{ item.name }}</a></td>
+                <td>
+                  <a class="clickable-text" v-if="item.sect_id" @click="openSectInfo(item.sect_id)">{{ item.sect }}</a>
+                  <span v-else>{{ item.sect }}</span>
+                </td>
                 <td>{{ item.realm }} {{ item.stage }}</td>
                 <td>{{ item.power }}</td>
               </tr>
@@ -126,8 +144,11 @@ watch(() => props.show, (newVal) => {
             <tbody>
               <tr v-for="(item, index) in rankings.human" :key="item.id">
                 <td>{{ index + 1 }}</td>
-                <td>{{ item.name }}</td>
-                <td>{{ item.sect }}</td>
+                <td><a class="clickable-text" @click="openAvatarInfo(item.id)">{{ item.name }}</a></td>
+                <td>
+                  <a class="clickable-text" v-if="item.sect_id" @click="openSectInfo(item.sect_id)">{{ item.sect }}</a>
+                  <span v-else>{{ item.sect }}</span>
+                </td>
                 <td>{{ item.realm }} {{ item.stage }}</td>
                 <td>{{ item.power }}</td>
               </tr>
@@ -152,7 +173,7 @@ watch(() => props.show, (newVal) => {
             <tbody>
               <tr v-for="(item, index) in rankings.sect" :key="item.id">
                 <td>{{ index + 1 }}</td>
-                <td>{{ item.name }}</td>
+                <td><a class="clickable-text" @click="openSectInfo(item.id)">{{ item.name }}</a></td>
                 <td>{{ item.alignment }}</td>
                 <td>{{ item.member_count }}</td>
                 <td>{{ item.total_power }}</td>
@@ -169,6 +190,18 @@ watch(() => props.show, (newVal) => {
 </template>
 
 <style scoped>
+.clickable-text {
+  color: #4dabf7;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.clickable-text:hover {
+  color: #8bc6ff;
+  text-decoration: underline;
+}
+
 :deep(.n-table) {
   background-color: transparent;
 }

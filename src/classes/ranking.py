@@ -34,6 +34,7 @@ class RankingManager:
             return {
                 "id": str(avatar.id),
                 "name": avatar.name,
+                "sect_id": avatar.sect.id if avatar.sect else None,
                 "sect": sect_name,
                 "realm": str(avatar.cultivation_progress.realm),
                 "stage": str(avatar.cultivation_progress.stage),
