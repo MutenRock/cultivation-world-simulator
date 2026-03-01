@@ -127,12 +127,6 @@ async function handleSelect(id: number, name: string) {
     </n-modal>
 
     <div class="author">
-      {{ t('splash.title') }}<a
-        class="author-link"
-        href="https://space.bilibili.com/527346837"
-        target="_blank"
-        rel="noopener"
-      >{{ t('game.status_bar.author_bilibili') }}</a>
       <a
         class="author-link"
         href="https://github.com/4thfever/cultivation-world-simulator"
