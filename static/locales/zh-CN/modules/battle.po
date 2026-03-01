@@ -6,11 +6,24 @@ msgstr ""
 "POT-Creation-Date: 2024-01-20 00:00+0000\n"
 "PO-Revision-Date: 2024-01-20 00:00+0000\n"
 "Last-Translator: \n"
-"Language-Team: Chinese\n"
+"Language-Team: zh-CN\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+msgid "daughter"
+msgstr "女"
+
+# Battle - action descriptions
+msgid "defeated"
+msgstr "战胜了"
+
+msgid "son"
+msgstr "子"
+
+msgid "{p1} and {p2} gave birth to a {gender} named {child}."
+msgstr "{p1} 与 {p2} 诞下一{gender}，取名为 {child}。"
 
 # Battle messages
 msgid ""
@@ -23,16 +36,3 @@ msgid ""
 "took {winner_dmg} damage."
 msgstr ""
 "{winner} 战胜了 {loser}，{loser} 受伤 {loser_dmg} 点，{winner} 也受伤 {winner_dmg} 点。"
-
-# Battle - action descriptions
-msgid "defeated"
-msgstr "战胜了"
-
-msgid "{p1} and {p2} gave birth to a {gender} named {child}."
-msgstr "{p1} 与 {p2} 诞下一{gender}，取名为 {child}。"
-
-msgid "son"
-msgstr "子"
-
-msgid "daughter"
-msgstr "女"

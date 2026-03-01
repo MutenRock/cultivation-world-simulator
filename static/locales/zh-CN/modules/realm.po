@@ -6,24 +6,24 @@ msgstr ""
 "POT-Creation-Date: 2024-01-20 00:00+0000\n"
 "PO-Revision-Date: 2024-01-20 00:00+0000\n"
 "Last-Translator: \n"
-"Language-Team: Chinese\n"
+"Language-Team: zh-CN\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-# Realm
-msgid "qi_refinement"
-msgstr "练气"
-
-msgid "foundation_establishment"
-msgstr "筑基"
+msgid "Mortal"
+msgstr "凡人"
 
 msgid "core_formation"
 msgstr "金丹"
 
+msgid "foundation_establishment"
+msgstr "筑基"
+
 msgid "nascent_soul"
 msgstr "元婴"
 
-msgid "Mortal"
-msgstr "凡人"
+# Realm
+msgid "qi_refinement"
+msgstr "练气"

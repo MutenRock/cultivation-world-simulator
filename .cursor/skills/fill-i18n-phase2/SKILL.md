@@ -18,3 +18,4 @@ description: 运行 Phase 2 工作流。执行脚本扫描缺失的多语言词�
 4. **编译与验证**：
    - 如果修改了后端 `.po` 文件，必须运行 `python tools/i18n/build_mo.py`。
    - 运行 `pytest tests/test_frontend_locales.py tests/test_backend_locales.py` 进行终检。如果有缺失，重复步骤 3 直到全部通过。
+   - 全部ok后，删除生成的i18n_missing_report.md文件

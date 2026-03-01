@@ -6,11 +6,24 @@ msgstr ""
 "POT-Creation-Date: 2024-01-20 00:00+0000\n"
 "PO-Revision-Date: 2024-01-20 00:00+0000\n"
 "Last-Translator: \n"
-"Language-Team: English\n"
+"Language-Team: en-US\n"
 "Language: en_US\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+msgid "daughter"
+msgstr "daughter"
+
+# Battle - action descriptions
+msgid "defeated"
+msgstr "defeated"
+
+msgid "son"
+msgstr "son"
+
+msgid "{p1} and {p2} gave birth to a {gender} named {child}."
+msgstr "{p1} and {p2} gave birth to a {gender} named {child}."
 
 # Battle messages
 msgid ""
@@ -26,16 +39,3 @@ msgid ""
 msgstr ""
 "{winner} defeated {loser}. {loser} took {loser_dmg} damage, {winner} also "
 "took {winner_dmg} damage."
-
-# Battle - action descriptions
-msgid "defeated"
-msgstr "defeated"
-
-msgid "{p1} and {p2} gave birth to a {gender} named {child}."
-msgstr "{p1} and {p2} gave birth to a {gender} named {child}."
-
-msgid "son"
-msgstr "son"
-
-msgid "daughter"
-msgstr "daughter"

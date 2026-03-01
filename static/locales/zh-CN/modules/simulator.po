@@ -6,18 +6,17 @@ msgstr ""
 "POT-Creation-Date: 2024-01-20 00:00+0000\n"
 "PO-Revision-Date: 2024-01-20 00:00+0000\n"
 "Last-Translator: \n"
-"Language-Team: Chinese\n"
+"Language-Team: zh-CN\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-# ============================================================================
-# Simulator & Event Translations
-# ============================================================================
-msgid ""
-"{avatar_name} passed by {region_name}, found it ownerless, and occupied it."
-msgstr "{avatar_name} 路过 {region_name}，发现无主，将其占据。"
+msgid "phenomenon_change"
+msgstr "{old_name}消散，天地异象再现！{new_name}：{new_desc}。"
+
+msgid "world_creation_phenomenon"
+msgstr "世界初开，天降异象！{name}：{desc}。"
 
 msgid ""
 "{avatar_name} deliberated and redefined their long-term objective: "
@@ -27,8 +26,9 @@ msgstr "{avatar_name} 经过深思熟虑，重新确定了自己的长期目标�
 msgid "{avatar_name} determined their long-term objective: {objective}"
 msgstr "{avatar_name} 确定了自己的长期目标：{objective}"
 
-msgid "world_creation_phenomenon"
-msgstr "世界初开，天降异象！{name}：{desc}。"
-
-msgid "phenomenon_change"
-msgstr "{old_name}消散，天地异象再现！{new_name}：{new_desc}。"
+# ============================================================================
+# Simulator & Event Translations
+# ============================================================================
+msgid ""
+"{avatar_name} passed by {region_name}, found it ownerless, and occupied it."
+msgstr "{avatar_name} 路过 {region_name}，发现无主，将其占据。"
