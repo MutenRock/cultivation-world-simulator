@@ -367,9 +367,8 @@ describe('StatusBar', () => {
     const wrapper = mount(StatusBar, globalConfig)
 
     const links = wrapper.findAll('a.author-link')
-    expect(links.length).toBe(2)
-    expect(links[0].attributes('href')).toContain('bilibili')
-    expect(links[1].attributes('href')).toContain('github')
+    expect(links.length).toBe(1)
+    expect(links[0].attributes('href')).toContain('github')
   })
 
   it('should pass correct props to phenomenon StatusWidget', () => {
