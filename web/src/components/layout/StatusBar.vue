@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useWorldStore } from '../../stores/world'
+import { useAvatarStore } from '../../stores/avatar'
 import { useSocketStore } from '../../stores/socket'
 import { ref, computed } from 'vue'
 import { NModal, NList, NListItem, NTag, NEmpty, useMessage } from 'naive-ui'
@@ -11,6 +12,7 @@ import TournamentModal from '../game/panels/TournamentModal.vue'
 
 const { t } = useI18n()
 const store = useWorldStore()
+const avatarStore = useAvatarStore()
 const socketStore = useSocketStore()
 const message = useMessage()
 const showSelector = ref(false)
@@ -151,7 +153,7 @@ async function handleSelect(id: number, name: string) {
       </a>
     </div>
     <div class="right">
-      <span>{{ t('game.status_bar.cultivators', { count: store.avatarList.length }) }}</span>
+      <span>{{ t('game.status_bar.cultivators', { count: avatarStore.avatarList.length }) }}</span>
     </div>
   </header>
 </template>

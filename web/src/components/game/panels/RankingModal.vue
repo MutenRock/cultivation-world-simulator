@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { NModal, NTabs, NTabPane, NTable, NSpin, NCard } from 'naive-ui'
+import { NModal, NTabs, NTabPane, NTable, NSpin } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { worldApi } from '../../../api/modules/world'
-import { useWorldStore } from '../../../stores/world'
 import { useUiStore } from '../../../stores/ui'
 
 const props = defineProps<{
@@ -16,7 +15,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const uiStore = useUiStore()
-const worldStore = useWorldStore()
 
 const openAvatarInfo = (id: string) => {
   uiStore.select('avatar', id)
