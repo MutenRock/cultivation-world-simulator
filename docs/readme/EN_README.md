@@ -253,7 +253,7 @@ For more details on contributions, please see [CONTRIBUTORS.md](../../CONTRIBUTO
 - ✅ World-scale events:
   - ✅ Auctions
   - ✅ Hidden domain exploration
-  - [ ] Martial tournaments
+  - [ ] World Martial Arts Tournament
   - ✅ Sect teaching
 - [ ] Sudden events
   - [ ] Treasure/cave emergence
