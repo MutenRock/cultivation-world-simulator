@@ -211,3 +211,6 @@ msgid ""
 "{name} has awakened their spiritual roots and embarked on the path of "
 "cultivation."
 msgstr "{name} 覺醒了靈根，踏上了修行之路。"
+
+msgid "Ranking"
+msgstr "排名"

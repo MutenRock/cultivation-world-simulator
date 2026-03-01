@@ -875,6 +875,9 @@ msgid ""
 "cultivation."
 msgstr "{name} 觉醒了灵根，踏上了修行之路。"
 
+msgid "Ranking"
+msgstr "排名"
+
 msgid "daughter"
 msgstr "女"
 

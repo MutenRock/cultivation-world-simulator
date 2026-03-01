@@ -936,6 +936,9 @@ msgstr ""
 "{name} has awakened their spiritual roots and embarked on the path of "
 "cultivation."
 
+msgid "Ranking"
+msgstr "Ranking"
+
 msgid "daughter"
 msgstr "daughter"
 
