@@ -102,6 +102,7 @@
         "magic_stone": "灵石",
         "appearance": "颜值",
         "battle_strength": "基础战力",
+        "ranking": "排行",
         "emotion": "情绪"
       },
       "sections": {

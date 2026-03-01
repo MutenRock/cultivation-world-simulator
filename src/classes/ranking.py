@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, TYPE_CHECKING
+from typing import List, Dict, Any, TYPE_CHECKING, Optional
 from src.systems.cultivation import Realm
 from src.systems.battle import get_base_strength
 
@@ -76,3 +76,15 @@ class RankingManager:
             "human": self.human_ranking,
             "sect": self.sect_ranking
         }
+
+    def get_avatar_rank(self, avatar_id: str) -> Optional[tuple[str, int]]:
+        for i, info in enumerate(self.heaven_ranking):
+            if info["id"] == str(avatar_id):
+                return "heaven", i + 1
+        for i, info in enumerate(self.earth_ranking):
+            if info["id"] == str(avatar_id):
+                return "earth", i + 1
+        for i, info in enumerate(self.human_ranking):
+            if info["id"] == str(avatar_id):
+                return "human", i + 1
+        return None

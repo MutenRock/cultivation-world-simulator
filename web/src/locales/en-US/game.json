@@ -102,6 +102,7 @@
         "magic_stone": "Stones",
         "appearance": "Look",
         "battle_strength": "Power",
+        "ranking": "Ranking",
         "emotion": "Emotion"
       },
       "sections": {
