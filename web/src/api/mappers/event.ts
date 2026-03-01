@@ -9,7 +9,6 @@ export function mapEventDtoToGameEvent(event: EventDTO): GameEvent {
     year: event.year,
     month: event.month,
     timestamp: event.month_stamp,
-    monthStamp: event.month_stamp,
     relatedAvatarIds: event.related_avatar_ids,
     isMajor: event.is_major,
     isStory: event.is_story,

@@ -28,7 +28,7 @@ export interface InitialStateDTO {
     gender?: string;
     pic_id?: number;
   }>;
-  events?: unknown[];
+  events?: EventDTO[];
   phenomenon?: CelestialPhenomenon | null;
 }
 
@@ -37,7 +37,7 @@ export interface TickPayloadDTO {
   year: number;
   month: number;
   avatars?: Array<Partial<InitialStateDTO['avatars'] extends (infer U)[] ? U : never>>;
-  events?: unknown[];
+  events?: EventDTO[];
   phenomenon?: CelestialPhenomenon | null;
   active_domains?: HiddenDomainInfo[];
 }
