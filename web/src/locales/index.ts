@@ -15,6 +15,8 @@ const loadLocaleMessages = (lang: string) => {
     modules = import.meta.glob('./zh-TW/*.json', { eager: true });
   } else if (lang === 'en-US') {
     modules = import.meta.glob('./en-US/*.json', { eager: true });
+  } else if (lang === 'fr-FR') {
+    modules = import.meta.glob('./fr-FR/*.json', { eager: true });
   }
 
   for (const path in modules) {
@@ -32,12 +34,13 @@ const messages = {
   'zh-CN': loadLocaleMessages('zh-CN'),
   'zh-TW': loadLocaleMessages('zh-TW'),
   'en-US': loadLocaleMessages('en-US'),
+  'fr-FR': loadLocaleMessages('fr-FR'),
 };
 
 // 使用 en-US 作为主架构进行类型推导
 type MessageSchema = typeof messages['en-US'];
 
-const i18n = createI18n<[MessageSchema], 'en-US' | 'zh-CN' | 'zh-TW'>({
+const i18n = createI18n<[MessageSchema], 'en-US' | 'zh-CN' | 'zh-TW' | 'fr-FR'>({
   legacy: false, // 使用 Composition API 模式
   locale: localStorage.getItem('app_locale') || 'zh-CN', // 默认语言
   fallbackLocale: 'en-US', // 回退语言
