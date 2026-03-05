@@ -44,8 +44,7 @@ export const useSettingStore = defineStore('setting', () => {
   
   async function syncBackend() {
       try {
-          const backendLang = locale.value === 'fr-FR' ? 'en-US' : locale.value;
-          await systemApi.setLanguage(backendLang);
+          await systemApi.setLanguage(locale.value);
       } catch (e) {
           console.warn('Failed to sync language with backend:', e);
       }
