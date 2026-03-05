@@ -20,7 +20,7 @@ export const useSettingStore = defineStore('setting', () => {
     localStorage.setItem('app_bgm_volume', String(volume));
   }
 
-  async function setLocale(lang: 'zh-CN' | 'zh-TW' | 'en-US') {
+  async function setLocale(lang: 'zh-CN' | 'zh-TW' | 'en-US' | 'fr-FR') {
     // 1. Optimistic UI update
     locale.value = lang;
     localStorage.setItem('app_locale', lang);
@@ -33,7 +33,8 @@ export const useSettingStore = defineStore('setting', () => {
     const langMap: Record<string, string> = {
       'zh-CN': 'zh-CN',
       'zh-TW': 'zh-TW',
-      'en-US': 'en'
+      'en-US': 'en',
+      'fr-FR': 'fr'
     };
     document.documentElement.lang = langMap[lang] || 'en';
 
@@ -43,7 +44,8 @@ export const useSettingStore = defineStore('setting', () => {
   
   async function syncBackend() {
       try {
-          await systemApi.setLanguage(locale.value);
+          const backendLang = locale.value === 'fr-FR' ? 'en-US' : locale.value;
+          await systemApi.setLanguage(backendLang);
       } catch (e) {
           console.warn('Failed to sync language with backend:', e);
       }

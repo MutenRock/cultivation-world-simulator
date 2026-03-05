@@ -1,0 +1,776 @@
+diff --git a/src/classes/language.py b/src/classes/language.py
+index d6bc86808c00d786165363f6b142034eda06072b..cb63b3734c09ddad87fbf0c34f37932b41de9c89 100644
+--- a/src/classes/language.py
++++ b/src/classes/language.py
+@@ -1,31 +1,32 @@
+ from enum import Enum
+ 
+ class LanguageType(Enum):
+     ZH_CN = "zh-CN"
+     ZH_TW = "zh-TW"
+     EN_US = "en-US"
++    FR_FR = "fr-FR"
+ 
+ class LanguageManager:
+     def __init__(self):
+         self._current = LanguageType.ZH_CN
+ 
+     @property
+     def current(self) -> LanguageType:
+         return self._current
+ 
+     def set_language(self, lang_code: str):
+         try:
+             # 尝试直接通过值匹配.
+             self._current = LanguageType(lang_code)
+         except ValueError:
+             # 如果匹配失败，默认为 zh-CN.
+             self._current = LanguageType.ZH_CN
+         
+         # Reload i18n translations when language changes.
+         from src.i18n import reload_translations
+         reload_translations()
+ 
+         # Update paths and reload game configs
+         from src.utils.config import update_paths_for_language
+         update_paths_for_language(self._current.value)
+ 
+diff --git a/web/src/components/SystemMenu.vue b/web/src/components/SystemMenu.vue
+index b4161ccf289495bf48ac1d551e63c0c33e3a9bfe..03c1d3642706fbd4a50b8da9dc54761fd28cb34c 100644
+--- a/web/src/components/SystemMenu.vue
++++ b/web/src/components/SystemMenu.vue
+@@ -9,51 +9,52 @@ import DeleteAvatarPanel from './game/panels/system/DeleteAvatarPanel.vue'
+ import LLMConfigPanel from './game/panels/system/LLMConfigPanel.vue'
+ import GameStartPanel from './game/panels/system/GameStartPanel.vue'
+ 
+ const { t } = useI18n()
+ const settingStore = useSettingStore()
+ 
+ const props = defineProps<{
+   visible: boolean
+   defaultTab?: 'save' | 'load' | 'create' | 'delete' | 'llm' | 'start' | 'settings' | 'about' | 'other'
+   gameInitialized: boolean
+   closable?: boolean
+ }>()
+ 
+ const emit = defineEmits<{
+   (e: 'close'): void
+   (e: 'llm-ready'): void
+   (e: 'return-to-main'): void
+   (e: 'exit-game'): void
+ }>()
+ 
+ const activeTab = ref<'save' | 'load' | 'create' | 'delete' | 'llm' | 'start' | 'settings' | 'about' | 'other'>(props.defaultTab || 'load')
+ 
+ const languageOptions = [
+   { label: '简体中文', value: 'zh-CN' },
+   { label: '繁體中文', value: 'zh-TW' },
+-  { label: 'English', value: 'en-US' }
++  { label: 'English', value: 'en-US' },
++  { label: 'Français', value: 'fr-FR' }
+ ]
+ 
+ function switchTab(tab: typeof activeTab.value) {
+   activeTab.value = tab
+ }
+ 
+ function openLink(url: string) {
+   window.open(url, '_blank')
+ }
+ 
+ // 监听 defaultTab 变化
+ watch(() => props.defaultTab, (newTab) => {
+   if (newTab) {
+     activeTab.value = newTab
+   }
+ })
+ 
+ // 当菜单打开时，如果有 defaultTab 就使用它
+ watch(() => props.visible, (val) => {
+   if (val && props.defaultTab) {
+     activeTab.value = props.defaultTab
+   }
+ })
+ </script>
+ 
+@@ -194,51 +195,51 @@ watch(() => props.visible, (val) => {
+                 <!-- SFX Control -->
+                 <div class="volume-row">
+                   <span class="volume-label">{{ t('ui.sfx_volume') }}</span>
+                   <div class="slider-container">
+                     <n-slider
+                       v-model:value="settingStore.sfxVolume"
+                       :min="0"
+                       :max="1"
+                       :step="0.05"
+                       :tooltip="false"
+                       @update:value="settingStore.setSfxVolume"
+                     />
+                   </div>
+                   <span class="volume-value">{{ Math.round(settingStore.sfxVolume * 100) }}%</span>
+                 </div>
+               </div>
+             </div>
+ 
+             <div class="setting-item">
+               <div class="setting-label-group">
+                 <n-icon size="24" color="#eee" class="setting-icon">
+                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                     <path fill="currentColor" d="M256 48C141.13 48 48 141.13 48 256s93.13 208 208 208s208-93.13 208-208S370.87 48 256 48m0 46.54c33.4 0 63.87 11.23 88.63 30.17c-22.56 31.84-51.48 59.7-88.63 80.64c-37.15-20.94-66.07-48.8-88.63-80.64C192.13 105.77 222.6 94.54 256 94.54m-80 32.14c22.76 27.65 49.77 52.37 80 71.95c-30.23 19.58-57.24 44.3-80 71.95c-20.78-22.38-38.35-46.73-52.09-72c13.73-25.26 31.31-49.61 52.09-71.9ZM256 417.46c-33.4 0-63.87-11.23-88.63-30.17c22.56-31.84 51.48-59.7 88.63-80.64c37.15 20.94 66.07 48.8 88.63 80.64c-24.76 18.94-55.23 30.17-88.63 30.17m80-32.14c-22.76-27.65-49.77-52.37-80-71.95c30.23-19.58 57.24-44.3 80-71.95c20.78 22.38 38.35 46.73 52.09 72c-13.74 25.26-31.31 49.61-52.09 71.95M256 244.64c-25.68-18.3-48.46-41.22-67.45-66.52c19.64-18.79 42.41-32.58 67.45-39.72c25.04 7.14 47.81 20.93 67.45 39.72c-18.99 25.3-41.77 48.22-67.45 66.52m0 109.24c-25.04-7.14-47.81-20.93-67.45-39.72c18.99-25.3 41.77-48.22 67.45-66.52c25.68 18.3 48.46 41.22 67.45 66.52c-19.64 18.79-42.41 32.58-67.45 39.72M81.56 238.15c13.29 27.23 30.76 52.92 51.64 76.54c-15.65-17.65-28.77-37.15-38.74-58.12c-5.18-10.9-9.17-22.03-11.96-33.37c3.15 5.06 6.13 10.05 9.06 14.95m24.16-52.53c9.97-20.97 23.09-40.47 38.74-58.12c-20.88 23.62-38.35 49.31-51.64 76.54c-2.93 4.9-5.91 9.89-9.06 14.95c2.79-11.34 6.78-22.47 11.96-33.37M406.28 273.85c-9.97 20.97-23.09 40.47-38.74 58.12c20.88-23.62 38.35-49.31 51.64-76.54c2.93-4.9 5.91-9.89 9.06-14.95c-2.79 11.34-6.78 22.47-11.96 33.37m-24.16 52.53c-13.29-27.23-30.76-52.92-51.64-76.54c15.65 17.65 28.77 37.15 38.74 58.12c5.18 10.9 9.17 22.03 11.96 33.37c-3.15-5.06-6.13-10.05-9.06-14.95"/>
+                   </svg>
+                 </n-icon>
+-                <span class="setting-label">语言 / Language</span>
++                <span class="setting-label">{{ t('ui.language') }}</span>
+               </div>
+               <n-select
+                 v-model:value="settingStore.locale"
+                 :options="languageOptions"
+                 @update:value="settingStore.setLocale"
+                 style="width: 200px"
+               />
+             </div>
+           </div>
+         </div>
+ 
+         <div v-else-if="activeTab === 'about'" class="other-panel-container">
+            <div class="panel-header">
+              <h3>{{ t('ui.about') }}</h3>
+            </div>
+            
+            <div class="other-actions">
+               <button class="custom-action-btn" @click="openLink('https://github.com/4thfever/cultivation-world-simulator')" v-sound>
+                 <div class="btn-content">
+                   <div class="btn-icon">⭐</div>
+                   <div class="btn-text-group">
+                     <span class="btn-title">{{ t('ui.about_github') }}</span>
+                     <span class="btn-desc">{{ t('ui.about_github_desc') }}</span>
+                   </div>
+                 </div>
+diff --git a/web/src/locales/fr-FR/attributes.json b/web/src/locales/fr-FR/attributes.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..12bda6d101e5085e948d77bf77aa86f7e541bbd7
+--- /dev/null
++++ b/web/src/locales/fr-FR/attributes.json
+@@ -0,0 +1,12 @@
++{
++  "GOLD": "Métal",
++  "WOOD": "Bois",
++  "WATER": "Eau",
++  "FIRE": "Feu",
++  "EARTH": "Terre",
++  "ICE": "Glace",
++  "WIND": "Vent",
++  "DARK": "Ténèbres",
++  "THUNDER": "Tonnerre",
++  "EVIL": "Maléfique"
++}
+diff --git a/web/src/locales/fr-FR/common.json b/web/src/locales/fr-FR/common.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..4a7ac7694cbc3d2a63550bce35f92de71d32f7b0
+--- /dev/null
++++ b/web/src/locales/fr-FR/common.json
+@@ -0,0 +1,11 @@
++{
++  "year": "A",
++  "month": "M",
++  "none": "Aucun",
++  "loading": "Chargement…",
++  "version": "Version",
++  "confirm": "Confirmer",
++  "cancel": "Annuler",
++  "error": "Erreur",
++  "success": "Succès"
++}
+diff --git a/web/src/locales/fr-FR/game.json b/web/src/locales/fr-FR/game.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..e86a87b57deabbab7e2a7a96c71b84e78e2c160e
+--- /dev/null
++++ b/web/src/locales/fr-FR/game.json
+@@ -0,0 +1,167 @@
++{
++  "prosperity": "Prospérité",
++  "status_bar": {
++    "phenomenon": "Phénomène mondial",
++    "effect": "Effet : ",
++    "duration": "Dure {years} ans",
++    "selector_title": "Intervention : changer le phénomène",
++    "empty_data": "Aucune donnée de phénomène",
++    "cultivators": "Cultivateurs : {count}",
++    "change_success": "Phénomène changé : {name}",
++    "click_to_change": "(cliquer pour changer le phénomène)",
++    "author_github": "GitHub",
++    "hidden_domain": {
++      "label": "[Domaine caché]",
++      "title": "Liste des domaines cachés",
++      "empty": "Aucune donnée de domaine caché",
++      "danger": "Danger",
++      "drop": "Fortune",
++      "status_open": "Ouvert",
++      "status_closed": "Fermé"
++    }
++  },
++  "controls": {
++    "resume": "Reprendre",
++    "pause": "Pause",
++    "paused": "En pause",
++    "closed_msg": "Jeu fermé. Vous pouvez fermer cet onglet en toute sécurité."
++  },
++  "event_panel": {
++    "title": "Journal des événements",
++    "filter_all": "Tout",
++    "deceased": "(Décédé)",
++    "add_second": "+ Ajouter un second",
++    "load_more": "Faites défiler vers le haut pour charger plus",
++    "empty_dual": "Aucun événement entre ces deux",
++    "empty_single": "Aucun événement pour ce cultivateur",
++    "empty_none": "Aucun événement"
++  },
++  "ranking": {
++    "title_short": "[Classements]",
++    "tournament_short": "[Tournoi]",
++    "title": "Classements du Ciel, de la Terre et des Humains",
++    "heaven": "Ciel (Âme naissante)",
++    "earth": "Terre (Formation du noyau)",
++    "human": "Humain (Fondation)",
++    "sect_ranking": "Sects",
++    "rank": "Rang",
++    "name": "Nom",
++    "sect": "Secte",
++    "realm": "Royaume",
++    "power": "Puissance",
++    "sect_name": "Nom de la secte",
++    "alignment": "Alignement",
++    "member_count": "Membres",
++    "total_power": "Puissance totale",
++    "empty": "Aucune donnée",
++    "tournament_title": "Tournoi mondial des arts martiaux",
++    "tournament_next": "Prochain tournoi dans {years} ans",
++    "heaven_first": "Ciel — 1er",
++    "earth_first": "Terre — 1er",
++    "human_first": "Humain — 1er"
++  },
++  "info_panel": {
++    "popup": {
++      "effect": "Effet : ",
++      "drops": "Butins : ",
++      "hq": "QG : ",
++      "types": {
++        "elixir": "Élixir",
++        "plant": "Plante",
++        "lode": "Gisement",
++        "item": "Objet",
++        "weapon": "Arme",
++        "auxiliary": "Auxiliaire",
++        "technique": "Technique",
++        "sect": "Secte",
++        "persona": "Trait",
++        "SWORD": "Épée",
++        "SABER": "Sabre",
++        "SPEAR": "Lance",
++        "STAFF": "Bâton",
++        "FAN": "Éventail",
++        "WHIP": "Fouet",
++        "ZITHER": "Cithare",
++        "FLUTE": "Flûte",
++        "HIDDEN_WEAPON": "Arme cachée"
++      }
++    },
++    "avatar": {
++      "set_objective": "Définir un objectif",
++      "clear_objective": "Effacer l’objectif",
++      "dead_with_reason": "Décédé ({reason})",
++      "unknown_reason": "Inconnu",
++      "long_term_objective": "Long terme",
++      "backstory": "Historique",
++      "short_term_objective": "Court terme",
++      "stats": {
++        "realm": "Royaume",
++        "origin": "Origine",
++        "age": "Âge",
++        "awakened_age": "Début de cultivation à",
++        "hp": "PV",
++        "gender": "Genre",
++        "alignment": "Alignement",
++        "sect": "Secte",
++        "rogue": "Indépendant",
++        "root": "Racine",
++        "magic_stone": "Pierres",
++        "appearance": "Apparence",
++        "battle_strength": "Puissance",
++        "ranking": "Classement",
++        "emotion": "Émotion"
++      },
++      "sections": {
++        "thinking": "Pensées",
++        "traits": "Traits",
++        "techniques_equipment": "Techniques & équipement",
++        "materials": "Matériaux",
++        "relations": "Relations",
++        "current_effects": "Effets actuels"
++      },
++      "weapon_meta": "Maîtrise {value}",
++      "relation_meta": "{relation} de {owner}",
++      "father_short": "Père",
++      "mother_short": "Mère",
++      "mortal_realm": "Mortel",
++      "modals": {
++        "set_long_term": "Définir un objectif à long terme",
++        "placeholder": "Saisir un objectif…",
++        "set_failed": "Échec de la définition",
++        "clear_confirm": "Voulez-vous vraiment effacer l’objectif à long terme ?"
++      }
++    },
++    "region": {
++      "view_sect": "Voir les détails de la secte",
++      "essence_title": "Environnement de qi",
++      "essence_info": "Qi {type} · densité {density}",
++      "sections": {
++        "host": "Propriétaire de la grotte",
++        "animals": "Animaux",
++        "plants": "Plantes",
++        "lodes": "Minéraux",
++        "market": "Marché"
++      },
++      "host_meta": "Propriétaire",
++      "no_host": "Sans propriétaire",
++      "price_meta": "{price} pierres"
++    },
++    "sect": {
++      "stats": {
++        "alignment": "Alignement",
++        "orthodoxy": "Orthodoxie",
++        "style": "Style",
++        "preferred": "Arme",
++        "members": "Membres"
++      },
++      "sections": {
++        "intro": "Introduction",
++        "hq": "QG : {name}",
++        "bonus": "Bonus de secte",
++        "techniques": "Techniques uniques",
++        "members": "Disciples"
++      },
++      "no_bonus": "Aucun bonus spécial"
++    }
++  }
++}
+diff --git a/web/src/locales/fr-FR/game_start.json b/web/src/locales/fr-FR/game_start.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..67c9c33e12a3833f5701547b82292fa6b3efef61
+--- /dev/null
++++ b/web/src/locales/fr-FR/game_start.json
+@@ -0,0 +1,26 @@
++{
++  "title": "Démarrer la partie",
++  "description": "Configurez l’état initial du monde. Note : ces paramètres ne peuvent plus être modifiés une fois la partie lancée.",
++  "labels": {
++    "init_npc_num": "Cultivateurs initiaux",
++    "sect_num": "Sects actives",
++    "new_npc_rate": "Taux mensuel de nouveaux cultivateurs",
++    "world_history": "Contexte historique du monde"
++  },
++  "tips": {
++    "sect_num": "Le nombre de sectes doit être inférieur à la moitié des cultivateurs initiaux.",
++    "world_history": "Peut inclure une histoire antique, médiévale ou récente. Note : l’activer appelle le LLM et augmente fortement le temps d’initialisation."
++  },
++  "placeholders": {
++    "world_history": "Saisissez le contexte historique du monde de cultivation (optionnel)."
++  },
++  "options": {},
++  "actions": {
++    "start": "Lancer"
++  },
++  "messages": {
++    "load_failed": "Impossible de charger la configuration",
++    "start_success": "Configuration sauvegardée, initialisation du monde…",
++    "start_failed": "Impossible de démarrer la partie"
++  }
++}
+diff --git a/web/src/locales/fr-FR/llm.json b/web/src/locales/fr-FR/llm.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..f181df9856d82e0fb13c2826f36d3576dd616bee
+--- /dev/null
++++ b/web/src/locales/fr-FR/llm.json
+@@ -0,0 +1,93 @@
++{
++  "loading": "Chargement…",
++  "fetch_failed": "Échec de la récupération de la configuration",
++  "test_success": "Test de connexion réussi",
++  "save_success": "Configuration sauvegardée",
++  "test_save_failed": "Échec du test ou de la sauvegarde : {error}",
++  "api_key_required": "Veuillez saisir la clé API",
++  "base_url_required": "Veuillez saisir l’URL de base",
++  "preset_applied": "Préréglage {name} appliqué ({extra})",
++  "preset_extra_key": "Veuillez saisir la clé API",
++  "preset_extra_local": "Assurez-vous qu’Ollama est en cours d’exécution",
++  "sections": {
++    "quick_fill": "Préréglages",
++    "api_config": "Configuration API",
++    "model_selection": "Choix du modèle",
++    "run_mode": "Mode d’exécution"
++  },
++  "labels": {
++    "api_key": "Clé API",
++    "base_url": "URL de base",
++    "normal_model": "Modèle intelligent (Normal)",
++    "fast_model": "Modèle rapide (Fast)",
++    "max_concurrent_requests": "Requêtes simultanées max",
++    "what_is_api": "Qu’est-ce que l’API / comment l’obtenir ?"
++  },
++  "descs": {
++    "normal_model": "Utilisé pour la logique complexe, la génération d’histoires, etc.",
++    "fast_model": "Utilisé pour les jugements simples, les interactions fréquentes, etc.",
++    "max_concurrent_requests": "Nombre de requêtes simultanées vers l’IA. Une valeur élevée accélère, mais peut déclencher une limite de débit (rate limit). Recommandé : 5–20."
++  },
++  "placeholders": {
++    "api_key": "Entrez votre clé API ici (commence souvent par sk-)",
++    "base_url": "https://api.example.com/v1",
++    "normal_model": "ex. gpt-4, claude-3-opus, qwen-plus",
++    "fast_model": "ex. gpt-3.5-turbo, qwen-flash",
++    "max_concurrent_requests": "Par défaut : 10"
++  },
++  "modes": {
++    "default": "Équilibré (par défaut)",
++    "default_desc": "Sélection automatique des modèles (recommandé)",
++    "normal": "Intelligent (Normal)",
++    "normal_desc": "Utiliser le modèle intelligent pour toutes les tâches",
++    "fast": "Rapide (Fast)",
++    "fast_desc": "Utiliser le modèle rapide pour toutes les tâches"
++  },
++  "actions": {
++    "testing": "Test de connexion…",
++    "test_and_save": "Tester la connexion et sauvegarder"
++  },
++  "help": {
++    "title": "Qu’est-ce qu’une API ? Guide de configuration",
++    "q1_title": " 1. Qu’est-ce qu’une API ?",
++    "q1_content": "Une API (Application Programming Interface) ressemble à une « ligne téléphonique ». Le jeu, en lui-même, n’a pas de capacité de réflexion : il se connecte à un « cerveau » d’IA distant (par exemple des serveurs Qwen ou DeepSeek) via cette ligne. Lors du ‘settlement’ mensuel et pour décider des actions des PNJ, le jeu envoie les informations pertinentes à l’IA via l’API ; l’IA ‘réfléchit’ puis renvoie le résultat.",
++    "q2_title": "⚡ 2. Modèles recommandés (2025)",
++    "q2_qwen": "Acteur majeur (Alibaba), stable avec de grands quotas gratuits, bien pour débuter.",
++    "q2_deepseek": "Excellent rapport performance/prix ; la logique colle bien au contexte chinois.",
++    "q2_gemini": "Développé par Google, performances globales de premier plan.",
++    "q3_title": " 3. Comment remplir la configuration ?",
++    "q3_content": "Une fois votre API obtenue, vous devez renseigner ces trois paramètres essentiels. Vous les trouverez généralement dans la documentation du fournisseur :",
++    "q3_format_note": "⚠️ Important : ce jeu ne prend en charge que le format d’API compatible OpenAI. Les services non compatibles ne peuvent pas être utilisés. Nous recommandons d’utiliser les préréglages (tous sont confirmés compatibles). Si vous souhaitez utiliser un autre service, vérifiez qu’il expose une interface compatible OpenAI.",
++    "q3_base_url": "URL de base de l’API : point d’entrée vers l’IA, généralement fourni par le vendeur (ex. https://api.deepseek.com).",
++    "q3_api_key": "Clé API : votre identifiant, comme un mot de passe de compte.",
++    "q3_model_name": "Nom du modèle : indique au serveur quel « cerveau » utiliser, par ex. deepseek-chat ou gemini-3-flash-preview.",
++    "q4_title": " 4. Où obtenir une clé ?",
++    "q5_title": "️ 5. Note de sécurité",
++    "q5_p1": "Votre clé API n’est enregistrée que dans le fichier de configuration local de votre ordinateur (`static/local_config.yml`), et le backend du jeu, exécuté localement, communique directement avec le fournisseur du modèle. Ce jeu (Cultivation World Simulator) est entièrement open source et n’enverra jamais votre clé vers un serveur tiers. De plus, ne partagez jamais votre fichier local_config.yml.",
++    "q5_p2": "L’utilisation de tokens engendre des coûts ; évaluez vous-même le coût d’usage.",
++    "confirm": "J’ai compris"
++  },
++  "presets": {
++    "openai": "OpenAI",
++    "qwen": "Qwen",
++    "deepseek": "DeepSeek",
++    "siliconflow": "SiliconFlow",
++    "openrouter": "OpenRouter",
++    "gemini": "Gemini",
++    "groq": "Groq",
++    "cerebras": "Cerebras",
++    "ollama": "Ollama (Local)"
++  },
++  "badges": {
++    "recommended": "Reco",
++    "free": "Éco"
++  },
++  "help_links": {
++    "openai": "Plateforme OpenAI",
++    "qwen": "Aliyun Bailian (Qwen / Recommandé)",
++    "deepseek": "Plateforme DeepSeek (rapide & éco)",
++    "openrouter": "OpenRouter (tout-en-un, recommandé)",
++    "siliconflow": "SiliconFlow (agrégateur domestique)",
++    "gemini": "Google AI Studio (Gemini)"
++  }
++}
+diff --git a/web/src/locales/fr-FR/loading.json b/web/src/locales/fr-FR/loading.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..2e7b75e08c39f9b74872fe41fff01dd2dce1886c
+--- /dev/null
++++ b/web/src/locales/fr-FR/loading.json
+@@ -0,0 +1,45 @@
++{
++  "title": "AI Cultivation World Simulator",
++  "subtitle": "AI Cultivation World Simulator",
++  "phase": {
++    "scanning_assets": "Analyse des ressources du monde",
++    "loading_map": "Construction de la carte primordiale",
++    "processing_history": "Déduction de l’histoire du Dao céleste",
++    "initializing_sects": "Arrivée des sectes dans le monde",
++    "generating_avatars": "Descente des cultivateurs",
++    "checking_llm": "Connexion à la Volonté céleste",
++    "loading_save": "Chargement des liens karmiques",
++    "parsing_data": "Interprétation des lois du Ciel et de la Terre",
++    "restoring_state": "Restauration du plan spatio-temporel",
++    "finalizing": "Retour de tous les phénomènes en place",
++    "complete": "Ouverture du Ciel et de la Terre",
++    "chaos": "Chaos primordial",
++    "generating_initial_events": "Génération des événements initiaux"
++  },
++  "error": "Échec de l’initialisation",
++  "unknown_error": "Erreur inconnue",
++  "retry": "Relancer l’initialisation",
++  "tips_label": "Astuces de cultivation",
++  "elapsed": "Attente : {seconds} secondes",
++  "tips": [
++    "Modifier les objectifs d’un personnage peut changer son style de comportement.",
++    "Les traits de caractère influencent fortement leur style de comportement.",
++    "Cultiver dans une grotte dont le qi correspond à votre racine spirituelle double l’efficacité.",
++    "Les personnages dotés d’une Racine céleste ont une efficacité doublée dans n’importe quelle grotte.",
++    "Modifier la densité d’énergie spirituelle du monde change les bonus et ajuste subtilement le comportement des personnages.",
++    "Chaque personnage a ses propres pensées et émotions.",
++    "En plus de la cultivation, l’alchimie et le raffinage du qi sont aussi importants.",
++    "Participer aux enchères peut permettre de faire de bonnes affaires, mais attention aux bandits qui pourraient vous poursuivre.",
++    "Les gens du Jianghu vous donneront un sobriquet selon vos actes.",
++    "La double cultivation, c’est bien… mais avec modération.",
++    "Se reposer au quartier général de la secte permet de restaurer entièrement les PV.",
++    "L’écart entre les royaumes est immense : défier un royaume supérieur est aussi difficile que d’ascendre au Ciel.",
++    "Les personnages ayant le trait ‘Enfant du destin’ bénéficient d’une chance constante et de rencontres fortuites.",
++    "Les transmigrés du monde moderne ne rêvent que de rentrer dans la réalité… mais c’est impossible.",
++    "Les élixirs ont une durée d’effet limitée.",
++    "Comme le LLM doit ‘réfléchir’, le démarrage peut prendre du temps.",
++    "Simuler le monde consomme beaucoup de tokens LLM ; gardez-le en tête.",
++    "Définir une histoire au début modifiera tout le monde de cultivation en conséquence.",
++    "Les trésors gagnés aux enchères peuvent grandement augmenter votre puissance, mais économisez vos pierres spirituelles."
++  ]
++}
+diff --git a/web/src/locales/fr-FR/realms.json b/web/src/locales/fr-FR/realms.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..d03f9d47bd50e92c47d28d97e2cf8899b5dc3bfe
+--- /dev/null
++++ b/web/src/locales/fr-FR/realms.json
+@@ -0,0 +1,6 @@
++{
++  "QI_REFINEMENT": "Raffinage du qi",
++  "FOUNDATION_ESTABLISHMENT": "Établissement des fondations",
++  "CORE_FORMATION": "Formation du noyau",
++  "NASCENT_SOUL": "Âme naissante"
++}
+diff --git a/web/src/locales/fr-FR/save_load.json b/web/src/locales/fr-FR/save_load.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..362aa3df1ef5e23dffcd84c5a21b3e662a85f6f6
+--- /dev/null
++++ b/web/src/locales/fr-FR/save_load.json
+@@ -0,0 +1,29 @@
++{
++  "loading": "Chargement…",
++  "new_save": "Nouvelle sauvegarde",
++  "new_save_desc": "Sauvegarder avec un nom personnalisé",
++  "quick_save": "Sauvegarde rapide",
++  "quick_save_desc": "Utiliser un nom généré automatiquement",
++  "empty": "Aucune sauvegarde",
++  "game_time": "Temps de jeu : {time}",
++  "avatar_count": "Personnages : {alive}/{total}",
++  "event_count": "{count} événements",
++  "load": "Charger",
++  "save_success": "Sauvegardé avec succès : {filename}",
++  "save_failed": "Échec de la sauvegarde",
++  "load_confirm": "Voulez-vous vraiment charger la sauvegarde {filename} ? La progression non sauvegardée sera perdue.",
++  "load_success": "Chargé avec succès",
++  "load_failed": "Échec du chargement",
++  "fetch_failed": "Échec de la récupération de la liste des sauvegardes",
++  "save_modal_title": "Sauvegarder la partie",
++  "save_confirm": "Sauvegarder",
++  "name_hint": "Saisissez un nom pour cette sauvegarde (optionnel)",
++  "name_placeholder": "Nom de sauvegarde…",
++  "name_tip": "Laissez vide pour utiliser un nom généré",
++  "name_too_long": "Le nom ne peut pas dépasser 50 caractères",
++  "name_invalid_chars": "Le nom ne peut contenir que des lettres, des chiffres, des caractères chinois et des underscores",
++  "delete": "Supprimer",
++  "delete_confirm": "Voulez-vous vraiment supprimer définitivement la sauvegarde {filename} ? Cette action est irréversible.",
++  "delete_success": "Sauvegarde supprimée",
++  "delete_failed": "Échec de la suppression"
++}
+diff --git a/web/src/locales/fr-FR/splash.json b/web/src/locales/fr-FR/splash.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..7f3c8873817bb84f9fd6c3eff468368ec71c8b41
+--- /dev/null
++++ b/web/src/locales/fr-FR/splash.json
+@@ -0,0 +1,6 @@
++{
++  "title": "AI Cultivation World Simulator",
++  "start": "Commencer la cultivation",
++  "continue": "Poursuivre la voie",
++  "settings": "Paramètres"
++}
+diff --git a/web/src/locales/fr-FR/technique_grades.json b/web/src/locales/fr-FR/technique_grades.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..939f35640b1f6fed4053b14ab2ebb20699c6626f
+--- /dev/null
++++ b/web/src/locales/fr-FR/technique_grades.json
+@@ -0,0 +1,5 @@
++{
++  "LOWER": "Inférieur",
++  "MIDDLE": "Intermédiaire",
++  "UPPER": "Supérieur"
++}
+diff --git a/web/src/locales/fr-FR/ui.json b/web/src/locales/fr-FR/ui.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..ca205703b5f0456e8907fb850e9759811196c854
+--- /dev/null
++++ b/web/src/locales/fr-FR/ui.json
+@@ -0,0 +1,35 @@
++{
++  "system_menu": "Menu système",
++  "system_menu_title": "Menu système",
++  "start_game": "Commencer",
++  "load_game": "Charger",
++  "save_game": "Sauvegarder",
++  "create_character": "Créer un personnage",
++  "create_alignment_placeholder": "Choisir un alignement (laisser vide pour Neutre)",
++  "delete_character": "Supprimer un personnage",
++  "settings": "Paramètres",
++  "achievements": "Succès",
++  "exit": "Quitter",
++  "other": "Autre",
++  "sound": "Son",
++  "bgm_volume": "Musique",
++  "sfx_volume": "Effets sonores",
++  "language": "Langue",
++  "chinese": "Chinois simplifié",
++  "english": "Anglais",
++  "back": "Retour",
++  "confirm": "Confirmer",
++  "cancel": "Annuler",
++  "llm_settings": "Paramètres LLM",
++  "other_options": "Autres options",
++  "other_options_desc": "Gérer la partie et quitter.",
++  "return_to_main": "Retour au menu principal",
++  "return_to_main_desc": "Retourner à l’écran titre (progression non sauvegardée perdue)",
++  "quit_game": "Quitter le jeu",
++  "quit_game_desc": "Fermer l’application et retourner au bureau",
++  "about": "À propos",
++  "about_github": "Soutenir sur GitHub",
++  "about_github_desc": "C’est un projet open source. Si vous avez un compte GitHub, soutenez-nous en laissant une étoile !",
++  "about_contributors": "Contributeurs",
++  "about_contributors_desc": "Merci à toutes les personnes qui ont contribué à ce projet open source !"
++}
+diff --git a/web/src/locales/index.ts b/web/src/locales/index.ts
+index 9c2d678be09f2e4d81f8f1acb7de8ca6c50bf826..d22c7624cab14ed3273a15cd53777791888afd94 100644
+--- a/web/src/locales/index.ts
++++ b/web/src/locales/index.ts
+@@ -1,47 +1,50 @@
+ import { createI18n } from 'vue-i18n';
+ 
+ /**
+  * 自动加载指定语言目录下的所有 JSON 模块
+  * @param lang 语言标识符 (如 'zh-CN')
+  */
+ const loadLocaleMessages = (lang: string) => {
+   const messages: Record<string, any> = {};
+   let modules: Record<string, any> = {};
+ 
+   // Vite 的 import.meta.glob 参数必须是静态字符串
+   if (lang === 'zh-CN') {
+     modules = import.meta.glob('./zh-CN/*.json', { eager: true });
+   } else if (lang === 'zh-TW') {
+     modules = import.meta.glob('./zh-TW/*.json', { eager: true });
+   } else if (lang === 'en-US') {
+     modules = import.meta.glob('./en-US/*.json', { eager: true });
++  } else if (lang === 'fr-FR') {
++    modules = import.meta.glob('./fr-FR/*.json', { eager: true });
+   }
+ 
+   for (const path in modules) {
+     // 提取文件名作为 key，例如 ./zh-CN/ui.json -> ui
+     const matched = path.match(/\/([^/]+)\.json$/);
+     if (matched && matched[1]) {
+       const key = matched[1];
+       messages[key] = (modules[path] as any).default;
+     }
+   }
+   return messages;
+ };
+ 
+ const messages = {
+   'zh-CN': loadLocaleMessages('zh-CN'),
+   'zh-TW': loadLocaleMessages('zh-TW'),
+   'en-US': loadLocaleMessages('en-US'),
++  'fr-FR': loadLocaleMessages('fr-FR'),
+ };
+ 
+ // 使用 en-US 作为主架构进行类型推导
+ type MessageSchema = typeof messages['en-US'];
+ 
+-const i18n = createI18n<[MessageSchema], 'en-US' | 'zh-CN' | 'zh-TW'>({
++const i18n = createI18n<[MessageSchema], 'en-US' | 'zh-CN' | 'zh-TW' | 'fr-FR'>({
+   legacy: false, // 使用 Composition API 模式
+   locale: localStorage.getItem('app_locale') || 'zh-CN', // 默认语言
+   fallbackLocale: 'en-US', // 回退语言
+   messages: messages as any
+ });
+ 
+ export default i18n;
+diff --git a/web/src/stores/setting.ts b/web/src/stores/setting.ts
+index 4b0f08887eadf6b33cb84c531bbafb707525e2ea..6e9d4dd471473c1111887b24298eb54624056e4a 100644
+--- a/web/src/stores/setting.ts
++++ b/web/src/stores/setting.ts
+@@ -1,61 +1,63 @@
+ import { defineStore } from 'pinia';
+ import { ref } from 'vue';
+ import i18n from '../locales';
+ import { systemApi } from '../api/modules/system';
+ 
+ export const useSettingStore = defineStore('setting', () => {
+   const locale = ref(localStorage.getItem('app_locale') || 'zh-CN');
+   
+   // Sound settings
+   const sfxVolume = ref(parseFloat(localStorage.getItem('app_sfx_volume') || '0.5'));
+   const bgmVolume = ref(parseFloat(localStorage.getItem('app_bgm_volume') || '0.5'));
+ 
+   function setSfxVolume(volume: number) {
+     sfxVolume.value = volume;
+     localStorage.setItem('app_sfx_volume', String(volume));
+   }
+ 
+   function setBgmVolume(volume: number) {
+     bgmVolume.value = volume;
+     localStorage.setItem('app_bgm_volume', String(volume));
+   }
+ 
+-  async function setLocale(lang: 'zh-CN' | 'zh-TW' | 'en-US') {
++  async function setLocale(lang: 'zh-CN' | 'zh-TW' | 'en-US' | 'fr-FR') {
+     // 1. Optimistic UI update
+     locale.value = lang;
+     localStorage.setItem('app_locale', lang);
+     if (i18n.mode === 'legacy') {
+         (i18n.global.locale as any) = lang;
+     } else {
+         (i18n.global.locale as any).value = lang;
+     }
+     // Update HTML lang attribute for accessibility
+     const langMap: Record<string, string> = {
+       'zh-CN': 'zh-CN',
+       'zh-TW': 'zh-TW',
+-      'en-US': 'en'
++      'en-US': 'en',
++      'fr-FR': 'fr'
+     };
+     document.documentElement.lang = langMap[lang] || 'en';
+ 
+     // 2. Sync with backend
+     await syncBackend();
+   }
+   
+   async function syncBackend() {
+       try {
+-          await systemApi.setLanguage(locale.value);
++          const backendLang = locale.value === 'fr-FR' ? 'en-US' : locale.value;
++          await systemApi.setLanguage(backendLang);
+       } catch (e) {
+           console.warn('Failed to sync language with backend:', e);
+       }
+   }
+ 
+   return {
+     locale,
+     setLocale,
+     syncBackend,
+     sfxVolume,
+     bgmVolume,
+     setSfxVolume,
+     setBgmVolume
+   };
+ });
