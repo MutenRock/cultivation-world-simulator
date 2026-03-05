@@ -1,0 +1,26 @@
+{
+  "title": "Démarrer la partie",
+  "description": "Configurez l’état initial du monde. Note : ces paramètres ne peuvent plus être modifiés une fois la partie lancée.",
+  "labels": {
+    "init_npc_num": "Cultivateurs initiaux",
+    "sect_num": "Sects actives",
+    "new_npc_rate": "Taux mensuel de nouveaux cultivateurs",
+    "world_history": "Contexte historique du monde"
+  },
+  "tips": {
+    "sect_num": "Le nombre de sectes doit être inférieur à la moitié des cultivateurs initiaux.",
+    "world_history": "Peut inclure une histoire antique, médiévale ou récente. Note : l’activer appelle le LLM et augmente fortement le temps d’initialisation."
+  },
+  "placeholders": {
+    "world_history": "Saisissez le contexte historique du monde de cultivation (optionnel)."
+  },
+  "options": {},
+  "actions": {
+    "start": "Lancer"
+  },
+  "messages": {
+    "load_failed": "Impossible de charger la configuration",
+    "start_success": "Configuration sauvegardée, initialisation du monde…",
+    "start_failed": "Impossible de démarrer la partie"
+  }
+}

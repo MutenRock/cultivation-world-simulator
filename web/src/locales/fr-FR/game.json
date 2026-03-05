@@ -1,0 +1,167 @@
+{
+  "prosperity": "Prospérité",
+  "status_bar": {
+    "phenomenon": "Phénomène mondial",
+    "effect": "Effet : ",
+    "duration": "Dure {years} ans",
+    "selector_title": "Intervention : changer le phénomène",
+    "empty_data": "Aucune donnée de phénomène",
+    "cultivators": "Cultivateurs : {count}",
+    "change_success": "Phénomène changé : {name}",
+    "click_to_change": "(cliquer pour changer le phénomène)",
+    "author_github": "GitHub",
+    "hidden_domain": {
+      "label": "[Domaine caché]",
+      "title": "Liste des domaines cachés",
+      "empty": "Aucune donnée de domaine caché",
+      "danger": "Danger",
+      "drop": "Fortune",
+      "status_open": "Ouvert",
+      "status_closed": "Fermé"
+    }
+  },
+  "controls": {
+    "resume": "Reprendre",
+    "pause": "Pause",
+    "paused": "En pause",
+    "closed_msg": "Jeu fermé. Vous pouvez fermer cet onglet en toute sécurité."
+  },
+  "event_panel": {
+    "title": "Journal des événements",
+    "filter_all": "Tout",
+    "deceased": "(Décédé)",
+    "add_second": "+ Ajouter un second",
+    "load_more": "Faites défiler vers le haut pour charger plus",
+    "empty_dual": "Aucun événement entre ces deux",
+    "empty_single": "Aucun événement pour ce cultivateur",
+    "empty_none": "Aucun événement"
+  },
+  "ranking": {
+    "title_short": "[Classements]",
+    "tournament_short": "[Tournoi]",
+    "title": "Classements du Ciel, de la Terre et des Humains",
+    "heaven": "Ciel (Âme naissante)",
+    "earth": "Terre (Formation du noyau)",
+    "human": "Humain (Fondation)",
+    "sect_ranking": "Sects",
+    "rank": "Rang",
+    "name": "Nom",
+    "sect": "Secte",
+    "realm": "Royaume",
+    "power": "Puissance",
+    "sect_name": "Nom de la secte",
+    "alignment": "Alignement",
+    "member_count": "Membres",
+    "total_power": "Puissance totale",
+    "empty": "Aucune donnée",
+    "tournament_title": "Tournoi mondial des arts martiaux",
+    "tournament_next": "Prochain tournoi dans {years} ans",
+    "heaven_first": "Ciel — 1er",
+    "earth_first": "Terre — 1er",
+    "human_first": "Humain — 1er"
+  },
+  "info_panel": {
+    "popup": {
+      "effect": "Effet : ",
+      "drops": "Butins : ",
+      "hq": "QG : ",
+      "types": {
+        "elixir": "Élixir",
+        "plant": "Plante",
+        "lode": "Gisement",
+        "item": "Objet",
+        "weapon": "Arme",
+        "auxiliary": "Auxiliaire",
+        "technique": "Technique",
+        "sect": "Secte",
+        "persona": "Trait",
+        "SWORD": "Épée",
+        "SABER": "Sabre",
+        "SPEAR": "Lance",
+        "STAFF": "Bâton",
+        "FAN": "Éventail",
+        "WHIP": "Fouet",
+        "ZITHER": "Cithare",
+        "FLUTE": "Flûte",
+        "HIDDEN_WEAPON": "Arme cachée"
+      }
+    },
+    "avatar": {
+      "set_objective": "Définir un objectif",
+      "clear_objective": "Effacer l’objectif",
+      "dead_with_reason": "Décédé ({reason})",
+      "unknown_reason": "Inconnu",
+      "long_term_objective": "Long terme",
+      "backstory": "Historique",
+      "short_term_objective": "Court terme",
+      "stats": {
+        "realm": "Royaume",
+        "origin": "Origine",
+        "age": "Âge",
+        "awakened_age": "Début de cultivation à",
+        "hp": "PV",
+        "gender": "Genre",
+        "alignment": "Alignement",
+        "sect": "Secte",
+        "rogue": "Indépendant",
+        "root": "Racine",
+        "magic_stone": "Pierres",
+        "appearance": "Apparence",
+        "battle_strength": "Puissance",
+        "ranking": "Classement",
+        "emotion": "Émotion"
+      },
+      "sections": {
+        "thinking": "Pensées",
+        "traits": "Traits",
+        "techniques_equipment": "Techniques & équipement",
+        "materials": "Matériaux",
+        "relations": "Relations",
+        "current_effects": "Effets actuels"
+      },
+      "weapon_meta": "Maîtrise {value}",
+      "relation_meta": "{relation} de {owner}",
+      "father_short": "Père",
+      "mother_short": "Mère",
+      "mortal_realm": "Mortel",
+      "modals": {
+        "set_long_term": "Définir un objectif à long terme",
+        "placeholder": "Saisir un objectif…",
+        "set_failed": "Échec de la définition",
+        "clear_confirm": "Voulez-vous vraiment effacer l’objectif à long terme ?"
+      }
+    },
+    "region": {
+      "view_sect": "Voir les détails de la secte",
+      "essence_title": "Environnement de qi",
+      "essence_info": "Qi {type} · densité {density}",
+      "sections": {
+        "host": "Propriétaire de la grotte",
+        "animals": "Animaux",
+        "plants": "Plantes",
+        "lodes": "Minéraux",
+        "market": "Marché"
+      },
+      "host_meta": "Propriétaire",
+      "no_host": "Sans propriétaire",
+      "price_meta": "{price} pierres"
+    },
+    "sect": {
+      "stats": {
+        "alignment": "Alignement",
+        "orthodoxy": "Orthodoxie",
+        "style": "Style",
+        "preferred": "Arme",
+        "members": "Membres"
+      },
+      "sections": {
+        "intro": "Introduction",
+        "hq": "QG : {name}",
+        "bonus": "Bonus de secte",
+        "techniques": "Techniques uniques",
+        "members": "Disciples"
+      },
+      "no_bonus": "Aucun bonus spécial"
+    }
+  }
+}
