@@ -50,16 +50,17 @@ def _get_current_lang() -> str:
 def _get_translation() -> Optional[gettext.GNUTranslations]:
     """
     Get translation object for current language.
-    
+
     Returns:
         GNUTranslations object or None if not found.
     """
     lang = _get_current_lang()
-    
+
     if lang not in _translations:
         locale_dir = _get_locale_dir()
         locale_name = _lang_to_locale(lang)
-        
+        fallback_used = False
+
         try:
             trans = gettext.translation(
                 "messages",
@@ -68,22 +69,47 @@ def _get_translation() -> Optional[gettext.GNUTranslations]:
             )
         except FileNotFoundError:
             trans = None
+            if locale_name != "en-US":
+                try:
+                    trans = gettext.translation(
+                        "messages",
+                        localedir=str(locale_dir),
+                        languages=["en-US"]
+                    )
+                    fallback_used = True
+                except FileNotFoundError:
+                    trans = None
 
+        config_trans = None
         try:
             config_trans = gettext.translation(
                 "game_configs",
                 localedir=str(locale_dir),
                 languages=[locale_name]
             )
+        except FileNotFoundError:
+            if locale_name != "en-US":
+                try:
+                    config_trans = gettext.translation(
+                        "game_configs",
+                        localedir=str(locale_dir),
+                        languages=["en-US"]
+                    )
+                    fallback_used = True
+                except FileNotFoundError:
+                    config_trans = None
+
+        if config_trans is not None:
             if trans:
                 trans.add_fallback(config_trans)
             else:
                 trans = config_trans
-        except FileNotFoundError:
-            pass
+
+        if trans is not None and fallback_used:
+            setattr(trans, "_is_fallback_en_us", True)
 
         _translations[lang] = trans
-    
+
     return _translations.get(lang)
 
 
@@ -113,8 +139,10 @@ def t(message: str, **kwargs) -> str:
     else:
         translated = message
     
-    # Check for missing translation if not in English
-    if _get_current_lang() != "en-US" and translated == message and message.strip():
+    is_fallback = bool(getattr(trans, "_is_fallback_en_us", False)) if trans else False
+
+    # Check for missing translation if not in English and not using deliberate en-US fallback
+    if _get_current_lang() != "en-US" and not is_fallback and translated == message and message.strip():
         logger.warning(f"[i18n] Missing translation for msgid: '{message}'")
     
     if kwargs:
