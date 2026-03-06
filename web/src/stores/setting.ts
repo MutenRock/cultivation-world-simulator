@@ -23,7 +23,7 @@ export const useSettingStore = defineStore('setting', () => {
 
   // Backward compatibility for existing references.
   const locale = uiLocale;
-  
+
   // Sound settings
   const sfxVolume = ref(parseFloat(localStorage.getItem('app_sfx_volume') || '0.5'));
   const bgmVolume = ref(parseFloat(localStorage.getItem('app_bgm_volume') || '0.5'));
@@ -38,31 +38,16 @@ export const useSettingStore = defineStore('setting', () => {
     localStorage.setItem('app_bgm_volume', String(volume));
   }
 
-<<<<<<< ours
-  async function setLocale(lang: 'zh-CN' | 'zh-TW' | 'en-US' | 'fr-FR') {
-=======
   async function setLocale(lang: LocaleCode) {
->>>>>>> theirs
-    // 1. Optimistic UI update
+    // 1) Optimistic UI update
     uiLocale.value = lang;
     localStorage.setItem('app_locale', lang);
+
     if (i18n.mode === 'legacy') {
       (i18n.global.locale as any) = lang;
     } else {
       (i18n.global.locale as any).value = lang;
     }
-<<<<<<< ours
-    // Update HTML lang attribute for accessibility
-    const langMap: Record<string, string> = {
-      'zh-CN': 'zh-CN',
-      'zh-TW': 'zh-TW',
-      'en-US': 'en',
-      'fr-FR': 'fr'
-    };
-    document.documentElement.lang = langMap[lang] || 'en';
-
-    // 2. Sync with backend
-=======
 
     // Update HTML lang attribute for accessibility.
     document.documentElement.lang = getHtmlLang(lang);
@@ -71,25 +56,17 @@ export const useSettingStore = defineStore('setting', () => {
   async function setTranslationLocale(lang: LocaleCode) {
     translationLocale.value = lang;
     localStorage.setItem('app_translation_locale', lang);
->>>>>>> theirs
     await syncBackend();
   }
-  
+
   async function syncBackend() {
-<<<<<<< ours
-      try {
-          const backendLang = locale.value === 'fr-FR' ? 'en-US' : locale.value;
-          await systemApi.setLanguage(backendLang);
-      } catch (e) {
-          console.warn('Failed to sync language with backend:', e);
-      }
-=======
     try {
-      await systemApi.setLanguage(translationLocale.value);
+      // Fallback: if backend doesn't support fr-FR, map it to en-US (or change to whatever it supports).
+      const backendLang: LocaleCode = translationLocale.value === 'fr-FR' ? 'en-US' : translationLocale.value;
+      await systemApi.setLanguage(backendLang);
     } catch (e) {
       console.warn('Failed to sync language with backend:', e);
     }
->>>>>>> theirs
   }
 
   return {
