@@ -69,6 +69,26 @@ describe('useSettingStore', () => {
 
     it('should default to zh-CN if localStorage is empty', () => {
       expect(store.uiLocale).toBe('zh-CN')
+<<<<<<< ours
+=======
+    })
+
+
+    it('should normalize fr-fr from localStorage to fr-FR', () => {
+      localStorageMock = { app_locale: 'fr-fr' }
+      setActivePinia(createPinia())
+      const newStore = useSettingStore()
+
+      expect(newStore.uiLocale).toBe('fr-FR')
+    })
+
+    it('should default translation locale to normalized UI locale', () => {
+      localStorageMock = { app_locale: 'fr-fr' }
+      setActivePinia(createPinia())
+      const newStore = useSettingStore()
+
+      expect(newStore.translationLocale).toBe('fr-FR')
+>>>>>>> theirs
     })
   })
 
@@ -130,11 +150,16 @@ describe('useSettingStore', () => {
 
 
   describe('setTranslationLocale', () => {
+<<<<<<< ours
     it('should save translation locale to localStorage and sync backend', async () => {
+=======
+    it('should save translation locale to localStorage without backend sync', async () => {
+>>>>>>> theirs
       await store.setTranslationLocale('fr-FR')
 
       expect(store.translationLocale).toBe('fr-FR')
       expect(localStorageMock.app_translation_locale).toBe('fr-FR')
+<<<<<<< ours
       expect(mockSetLanguage).toHaveBeenCalledWith('fr-FR')
     })
   })
@@ -142,8 +167,38 @@ describe('useSettingStore', () => {
   describe('syncBackend', () => {
     it('should call systemApi.setLanguage with translation locale', async () => {
       await store.setTranslationLocale('zh-TW')
+=======
+      expect(mockSetLanguage).not.toHaveBeenCalled()
+    })
+  })
 
-      expect(mockSetLanguage).toHaveBeenCalledWith('zh-TW')
+
+  describe('runtime/data/translation controls', () => {
+    it('should set data locale and local translation toggle', () => {
+      store.setDataLocale('fr-FR')
+      store.setLocalEventTranslationEnabled(true)
+>>>>>>> theirs
+
+      expect(store.dataLocale).toBe('fr-FR')
+      expect(store.localEventTranslationEnabled).toBe(true)
+      expect(localStorageMock.app_data_locale).toBe('fr-FR')
+      expect(localStorageMock.app_local_event_translation).toBe('1')
+    })
+
+    it('should normalize runtime locale from storage to CH/EN', () => {
+      localStorageMock = { app_runtime_locale: 'fr-FR' }
+      setActivePinia(createPinia())
+      const newStore = useSettingStore()
+
+      expect(newStore.runtimeLocale).toBe('zh-CN')
+    })
+  })
+
+  describe('syncBackend', () => {
+    it('should call systemApi.setLanguage with runtime locale (CH/EN only)', async () => {
+      await store.setRuntimeLocale('en-US')
+
+      expect(mockSetLanguage).toHaveBeenCalledWith('en-US')
     })
 
     it('should catch errors and log warning', async () => {

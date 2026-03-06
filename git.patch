@@ -283,10 +283,10 @@ index b3e660e5aa9322cfe0a21fa9c1f737d9b8fa4312..7550dcafc2172d55ba99f5a632062586
    }
  }
 diff --git a/web/src/__tests__/stores/setting.test.ts b/web/src/__tests__/stores/setting.test.ts
-index 79b0e5a2d47d3e8287d337ca03be5d2d8f8d6013..2d43a837e18735db31a80545638f4a22a3ac3418 100644
+index 79b0e5a2d47d3e8287d337ca03be5d2d8f8d6013..ef6dd7520b2fc9ae1cc108f198b53565d825314a 100644
 --- a/web/src/__tests__/stores/setting.test.ts
 +++ b/web/src/__tests__/stores/setting.test.ts
-@@ -42,119 +42,145 @@ describe('useSettingStore', () => {
+@@ -42,120 +42,167 @@ describe('useSettingStore', () => {
      })
      vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key: string, value: string) => {
        localStorageMock[key] = value
@@ -404,20 +404,42 @@ index 79b0e5a2d47d3e8287d337ca03be5d2d8f8d6013..2d43a837e18735db31a80545638f4a22
  
 -      await store.syncBackend()
 +  describe('setTranslationLocale', () => {
-+    it('should save translation locale to localStorage and sync backend', async () => {
++    it('should save translation locale to localStorage without backend sync', async () => {
 +      await store.setTranslationLocale('fr-FR')
 +
 +      expect(store.translationLocale).toBe('fr-FR')
 +      expect(localStorageMock.app_translation_locale).toBe('fr-FR')
-+      expect(mockSetLanguage).toHaveBeenCalledWith('fr-FR')
++      expect(mockSetLanguage).not.toHaveBeenCalled()
++    })
++  })
++
++
++  describe('runtime/data/translation controls', () => {
++    it('should set data locale and local translation toggle', () => {
++      store.setDataLocale('fr-FR')
++      store.setLocalEventTranslationEnabled(true)
+ 
+-      expect(mockSetLanguage).toHaveBeenCalledWith('zh-TW')
++      expect(store.dataLocale).toBe('fr-FR')
++      expect(store.localEventTranslationEnabled).toBe(true)
++      expect(localStorageMock.app_data_locale).toBe('fr-FR')
++      expect(localStorageMock.app_local_event_translation).toBe('1')
++    })
++
++    it('should normalize runtime locale from storage to CH/EN', () => {
++      localStorageMock = { app_runtime_locale: 'fr-FR' }
++      setActivePinia(createPinia())
++      const newStore = useSettingStore()
++
++      expect(newStore.runtimeLocale).toBe('zh-CN')
 +    })
 +  })
 +
 +  describe('syncBackend', () => {
-+    it('should call systemApi.setLanguage with translation locale', async () => {
-+      await store.setTranslationLocale('zh-TW')
- 
-       expect(mockSetLanguage).toHaveBeenCalledWith('zh-TW')
++    it('should call systemApi.setLanguage with runtime locale (CH/EN only)', async () => {
++      await store.setRuntimeLocale('en-US')
++
++      expect(mockSetLanguage).toHaveBeenCalledWith('en-US')
      })
  
      it('should catch errors and log warning', async () => {
@@ -441,11 +463,131 @@ index 79b0e5a2d47d3e8287d337ca03be5d2d8f8d6013..2d43a837e18735db31a80545638f4a22
        await expect(store.syncBackend()).resolves.not.toThrow()
      })
    })
+ })
+diff --git a/web/src/__tests__/stores/socket.test.ts b/web/src/__tests__/stores/socket.test.ts
+index 317d7cc518a527b329a4b7c56d8145d7214f4ec3..78b8552e3bc25b5da03253985eb77427fabf9098 100644
+--- a/web/src/__tests__/stores/socket.test.ts
++++ b/web/src/__tests__/stores/socket.test.ts
+@@ -258,107 +258,71 @@ describe('useSocketStore', () => {
+ 
+     it('should show success toast for success level', () => {
+       store.init()
+ 
+       messageCallback?.({ type: 'toast', level: 'success', message: 'Success message' })
+ 
+       expect(mockMessage.success).toHaveBeenCalledWith('Success message')
+     })
+ 
+     it('should show info toast for info level', () => {
+       store.init()
+ 
+       messageCallback?.({ type: 'toast', level: 'info', message: 'Info message' })
+ 
+       expect(mockMessage.info).toHaveBeenCalledWith('Info message')
+     })
+ 
+     it('should show info toast for unknown level', () => {
+       store.init()
+ 
+       messageCallback?.({ type: 'toast', level: 'unknown', message: 'Unknown level message' })
+ 
+       expect(mockMessage.info).toHaveBeenCalledWith('Unknown level message')
+     })
+ 
+-    it('should switch language in composition mode when language field is present', () => {
++    it('should store runtime locale hint when language field is present', () => {
+       mockI18nMode = 'composition'
+-      mockI18nLocale = { value: 'zh-CN' }
++      mockI18nLocale = { value: 'fr-FR' }
+       const localStorageSpy = vi.spyOn(Storage.prototype, 'setItem')
+ 
+       store.init()
+       messageCallback?.({ type: 'toast', level: 'info', message: 'Test', language: 'en-US' })
+ 
+-      expect(mockI18nLocale.value).toBe('en-US')
+-      expect(localStorageSpy).toHaveBeenCalledWith('app_locale', 'en-US')
++      expect(mockI18nLocale.value).toBe('fr-FR')
++      expect(localStorageSpy).toHaveBeenCalledWith('app_runtime_locale', 'en-US')
+       localStorageSpy.mockRestore()
+     })
+ 
+-    it('should switch language in legacy mode when language field is present', () => {
+-      mockI18nMode = 'legacy'
+-      mockI18nLocale = 'zh-CN'
+-      const localStorageSpy = vi.spyOn(Storage.prototype, 'setItem')
+-
+-      store.init()
+-      messageCallback?.({ type: 'toast', level: 'info', message: 'Test', language: 'en-US' })
+-
+-      expect(mockI18nLocale).toBe('en-US')
+-      expect(localStorageSpy).toHaveBeenCalledWith('app_locale', 'en-US')
+-      localStorageSpy.mockRestore()
+-    })
+-
+-    it('should not switch language if same as current', () => {
+-      mockI18nMode = 'composition'
+-      mockI18nLocale = { value: 'en-US' }
+-      const localStorageSpy = vi.spyOn(Storage.prototype, 'setItem')
+-
+-      store.init()
+-      messageCallback?.({ type: 'toast', level: 'info', message: 'Test', language: 'en-US' })
+-
+-      // Should not call setItem if language is same.
+-      expect(localStorageSpy).not.toHaveBeenCalled()
+-      localStorageSpy.mockRestore()
+-    })
+-
+-    it('should update document.documentElement.lang for zh-CN', () => {
++    it('should keep ui html lang based on current ui locale', () => {
+       mockI18nMode = 'composition'
+-      mockI18nLocale = { value: 'en-US' }
++      mockI18nLocale = { value: 'fr-FR' }
+ 
+       store.init()
+       messageCallback?.({ type: 'toast', level: 'info', message: 'Test', language: 'zh-CN' })
+ 
+-      expect(document.documentElement.lang).toBe('zh-CN')
+-    })
+-
+-    it('should update document.documentElement.lang for en-US', () => {
+-      mockI18nMode = 'composition'
+-      mockI18nLocale = { value: 'zh-CN' }
+-
+-      store.init()
+-      messageCallback?.({ type: 'toast', level: 'info', message: 'Test', language: 'en-US' })
+-
+-      expect(document.documentElement.lang).toBe('en')
++      expect(document.documentElement.lang).toBe('fr')
+     })
+ 
+     it('should handle language switch errors gracefully', () => {
+       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+       // Create a getter that throws.
+       mockI18nMode = 'composition'
+       const errorObj = {
+         get value() { throw new Error('Test error') },
+         set value(_v) { throw new Error('Test error') },
+       }
+       mockI18nLocale = errorObj
+ 
+       store.init()
+       // Should not throw.
+       messageCallback?.({ type: 'toast', level: 'info', message: 'Test', language: 'en-US' })
+ 
+       expect(consoleSpy).toHaveBeenCalled()
+       consoleSpy.mockRestore()
+     })
+   })
+ 
+   describe('status change handling', () => {
+     it('should update isConnected when status changes to connected', () => {
+       store.init()
+ 
 diff --git a/web/src/components/SystemMenu.vue b/web/src/components/SystemMenu.vue
-index b4161ccf289495bf48ac1d551e63c0c33e3a9bfe..3f0f37d45e14bea5d7a97b0d1ddf285144a49393 100644
+index b4161ccf289495bf48ac1d551e63c0c33e3a9bfe..a9359a38192652f69baa80dc7bcc3fbc1b55ce11 100644
 --- a/web/src/components/SystemMenu.vue
 +++ b/web/src/components/SystemMenu.vue
-@@ -9,51 +9,52 @@ import DeleteAvatarPanel from './game/panels/system/DeleteAvatarPanel.vue'
+@@ -9,51 +9,63 @@ import DeleteAvatarPanel from './game/panels/system/DeleteAvatarPanel.vue'
  import LLMConfigPanel from './game/panels/system/LLMConfigPanel.vue'
  import GameStartPanel from './game/panels/system/GameStartPanel.vue'
  
@@ -474,6 +616,17 @@ index b4161ccf289495bf48ac1d551e63c0c33e3a9bfe..3f0f37d45e14bea5d7a97b0d1ddf2851
 -  { label: 'English', value: 'en-US' }
 +  { label: 'English', value: 'en-US' },
 +  { label: 'Français', value: 'fr-FR' }
++]
++
++
++const runtimeLanguageOptions = [
++  { label: '简体中文 (zh-CN)', value: 'zh-CN' },
++  { label: 'English (en-US)', value: 'en-US' }
++]
++
++const dataLocaleOptions = [
++  { label: '简体中文数据 (zh-CN)', value: 'zh-CN' },
++  { label: 'Français données (fr-FR)', value: 'fr-FR' }
  ]
  
  function switchTab(tab: typeof activeTab.value) {
@@ -499,7 +652,7 @@ index b4161ccf289495bf48ac1d551e63c0c33e3a9bfe..3f0f37d45e14bea5d7a97b0d1ddf2851
  })
  </script>
  
-@@ -194,59 +195,76 @@ watch(() => props.visible, (val) => {
+@@ -194,59 +206,111 @@ watch(() => props.visible, (val) => {
                  <!-- SFX Control -->
                  <div class="volume-row">
                    <span class="volume-label">{{ t('ui.sfx_volume') }}</span>
@@ -553,6 +706,41 @@ index b4161ccf289495bf48ac1d551e63c0c33e3a9bfe..3f0f37d45e14bea5d7a97b0d1ddf2851
 +                style="width: 200px"
 +              />
 +            </div>
++
++
++            <div class="setting-item">
++              <div class="setting-label-group">
++                <span class="setting-label">{{ t('ui.runtime_language_mode') }}</span>
++              </div>
++              <n-select
++                v-model:value="settingStore.runtimeLocale"
++                :options="runtimeLanguageOptions"
++                @update:value="settingStore.setRuntimeLocale"
++                style="width: 200px"
++              />
++            </div>
++
++            <div class="setting-item">
++              <div class="setting-label-group">
++                <span class="setting-label">{{ t('ui.dataset_language') }}</span>
++              </div>
++              <n-select
++                v-model:value="settingStore.dataLocale"
++                :options="dataLocaleOptions"
++                @update:value="settingStore.setDataLocale"
++                style="width: 200px"
++              />
++            </div>
++
++            <div class="setting-item">
++              <div class="setting-label-group">
++                <span class="setting-label">{{ t('ui.local_event_translation') }}</span>
++              </div>
++              <n-switch
++                :value="settingStore.localEventTranslationEnabled"
++                @update:value="settingStore.setLocalEventTranslationEnabled"
++              />
++            </div>
            </div>
          </div>
  
@@ -578,11 +766,195 @@ index b4161ccf289495bf48ac1d551e63c0c33e3a9bfe..3f0f37d45e14bea5d7a97b0d1ddf2851
                    <div class="btn-icon">👥</div>
                    <div class="btn-text-group">
                      <span class="btn-title">{{ t('ui.about_contributors') }}</span>
+diff --git a/web/src/components/game/panels/EventPanel.vue b/web/src/components/game/panels/EventPanel.vue
+index b9639e7fc09e6f6437a3124a78ada89f30ebc230..a8e41bbf877771ee17b5fef6b1a60ad771c9de60 100644
+--- a/web/src/components/game/panels/EventPanel.vue
++++ b/web/src/components/game/panels/EventPanel.vue
+@@ -1,40 +1,42 @@
+ <script setup lang="ts">
+ import { computed, ref, watch, nextTick, h } from 'vue'
+ import { useAvatarStore } from '../../../stores/avatar'
+ import { useEventStore } from '../../../stores/event'
+ import { useUiStore } from '../../../stores/ui'
++import { useSettingStore } from '../../../stores/setting'
+ import { NSelect, NSpin, NButton } from 'naive-ui'
+ import type { SelectOption } from 'naive-ui'
+ import { tokenizeEventContent, buildAvatarColorMap, avatarIdToColor } from '../../../utils/eventHelper'
+ import type { GameEvent } from '../../../types/core'
+ import { useI18n } from 'vue-i18n'
+ 
+ const { t } = useI18n()
+ const avatarStore = useAvatarStore()
+ const eventStore = useEventStore()
+ const uiStore = useUiStore()
++const settingStore = useSettingStore()
+ const filterValue1 = ref('all')
+ const filterValue2 = ref<string | null>(null)  // null 表示未启用双人筛选
+ const eventListRef = ref<HTMLElement | null>(null)
+ 
+ const filterOptions = computed(() => [
+   { label: t('game.event_panel.filter_all'), value: 'all' },
+   ...avatarStore.avatarList.map(avatar => ({
+     label: (avatar.name ?? avatar.id) + (avatar.is_dead ? ` ${t('game.event_panel.deceased')}` : ''),
+     value: avatar.id
+   }))
+ ])
+ 
+ // 第二人的选项（排除第一人和"所有人"）
+ const filterOptions2 = computed(() =>
+   avatarStore.avatarList
+     .filter(avatar => avatar.id !== filterValue1.value)
+     .map(avatar => ({
+       label: (avatar.name ?? avatar.id) + (avatar.is_dead ? ` ${t('game.event_panel.deceased')}` : ''),
+       value: avatar.id
+     }))
+ )
+ 
+ // 直接使用 store 中的事件（已由 API 过滤）
+ const displayEvents = computed(() => eventStore.events || [])
+ 
+@@ -133,54 +135,134 @@ watch(displayEvents, () => {
+   const isScrollable = el.scrollHeight > el.clientHeight
+   const isAtBottom = !isScrollable || (el.scrollHeight - el.scrollTop - el.clientHeight < 50)
+ 
+   if (isAtBottom) {
+     nextTick(() => {
+       if (eventListRef.value) {
+         eventListRef.value.scrollTop = eventListRef.value.scrollHeight
+       }
+     })
+   }
+ }, { deep: true })
+ 
+ const emptyEventMessage = computed(() => {
+   if (filterValue2.value) return t('game.event_panel.empty_dual')
+   if (filterValue1.value !== 'all') return t('game.event_panel.empty_single')
+   return t('game.event_panel.empty_none')
+ })
+ 
+ function formatEventDate(event: { year: number; month: number }) {
+   return `${event.year}${t('common.year')}${event.month}${t('common.month')}`
+ }
+ 
+ // 构建角色名 -> 颜色映射表。
+ const avatarColorMap = computed(() => buildAvatarColorMap(avatarStore.avatarList))
+ 
++const translatedEventText = ref<Record<string, string>>({})
++const translatingEventIds = ref<Set<string>>(new Set())
++
++const shouldTranslateEventsLocally = computed(() => {
++  return settingStore.localEventTranslationEnabled
++    && settingStore.translationLocale !== settingStore.dataLocale
++})
++
++function applyLocalGlossary(text: string) {
++  // Local lightweight glossary-based translation.
++  // Keeps avatar names/hyperlinks intact by avoiding structural replacements.
++  if (!text) return text
++
++  if (settingStore.dataLocale === 'zh-CN' && settingStore.translationLocale === 'fr-FR') {
++    return text
++      .replace(/突破/g, 'percée')
++      .replace(/击败/g, 'a vaincu')
++      .replace(/获得/g, 'a obtenu')
++      .replace(/修炼/g, 'cultive')
++  }
++
++  if (settingStore.dataLocale === 'zh-CN' && settingStore.translationLocale === 'en-US') {
++    return text
++      .replace(/突破/g, 'breakthrough')
++      .replace(/击败/g, 'defeated')
++      .replace(/获得/g, 'obtained')
++      .replace(/修炼/g, 'cultivates')
++  }
++
++  if (settingStore.dataLocale === 'fr-FR' && settingStore.translationLocale === 'en-US') {
++    return text
++      .replace(/a vaincu/g, 'defeated')
++      .replace(/a obtenu/g, 'obtained')
++      .replace(/cultive/g, 'cultivates')
++  }
++
++  return text
++}
++
++async function translateEventTextLocal(eventId: string, text: string) {
++  if (translatedEventText.value[eventId] || translatingEventIds.value.has(eventId)) return
++  translatingEventIds.value.add(eventId)
++
++  // Simulate async local translation pipeline to avoid blocking UI thread.
++  await new Promise((resolve) => setTimeout(resolve, 80))
++  translatedEventText.value[eventId] = applyLocalGlossary(text)
++
++  translatingEventIds.value.delete(eventId)
++}
++
++watch(
++  [displayEvents, shouldTranslateEventsLocally, () => settingStore.translationLocale, () => settingStore.dataLocale],
++  ([events, enabled]) => {
++    if (!enabled) {
++      translatedEventText.value = {}
++      translatingEventIds.value = new Set()
++      return
++    }
++
++    for (const event of events || []) {
++      const text = event.content || event.text || ''
++      if (text) {
++        void translateEventTextLocal(event.id, text)
++      }
++    }
++  },
++  { immediate: true, deep: true }
++)
++
++
+ // 渲染事件内容：拆分为安全 token，避免使用 v-html。
+ function renderEventContent(event: GameEvent) {
+-  const text = event.content || event.text || ''
+-  return tokenizeEventContent(text, avatarColorMap.value)
++  const rawText = event.content || event.text || ''
++
++  if (!shouldTranslateEventsLocally.value) {
++    return tokenizeEventContent(rawText, avatarColorMap.value)
++  }
++
++  const translated = translatedEventText.value[event.id]
++  if (!translated) {
++    return tokenizeEventContent(t('common.loading'), avatarColorMap.value)
++  }
++
++  return tokenizeEventContent(translated, avatarColorMap.value)
+ }
+ 
+ function handleAvatarClick(avatarId?: string) {
+   if (avatarId) {
+     uiStore.select('avatar', avatarId)
+   }
+ }
+ </script>
+ 
+ <template>
+   <section class="sidebar-section">
+     <div class="sidebar-header">
+       <h3>{{ t('game.event_panel.title') }}</h3>
+       <div class="filter-group">
+         <n-select
+           v-model:value="filterValue1"
+           :options="filterOptions"
+           :render-label="renderLabel"
+           size="tiny"
+           class="event-filter"
+         />
+         <!-- 双人筛选 -->
+         <template v-if="filterValue2 !== null">
+           <n-select
+             v-model:value="filterValue2"
 diff --git a/web/src/locales/en-US/ui.json b/web/src/locales/en-US/ui.json
-index 64e1e129d58afc891fba13284b15e7a13291aecb..d0edb000dafe9bdd663c7331b982052a0708e0e9 100644
+index 64e1e129d58afc891fba13284b15e7a13291aecb..d58c9cbb2323d4c0af99970632bf04374a580af1 100644
 --- a/web/src/locales/en-US/ui.json
 +++ b/web/src/locales/en-US/ui.json
-@@ -9,27 +9,28 @@
+@@ -9,27 +9,31 @@
    "delete_character": "Delete Character",
    "settings": "Settings",
    "achievements": "Achievements",
@@ -612,7 +984,10 @@ index 64e1e129d58afc891fba13284b15e7a13291aecb..d0edb000dafe9bdd663c7331b982052a
 -}
 \ No newline at end of file
 +  "about_contributors_desc": "Thanks to all the creators who contributed to this open-source project!",
-+  "translation_language": "Translation Language"
++  "translation_language": "Translation Language",
++  "runtime_language_mode": "Runtime Language Mode (CH/EN)",
++  "dataset_language": "Data Set Language",
++  "local_event_translation": "Enable local event translation"
 +}
 diff --git a/web/src/locales/fr-FR/attributes.json b/web/src/locales/fr-FR/attributes.json
 new file mode 100644
@@ -1076,10 +1451,10 @@ index 0000000000000000000000000000000000000000..939f35640b1f6fed4053b14ab2ebb206
 +}
 diff --git a/web/src/locales/fr-FR/ui.json b/web/src/locales/fr-FR/ui.json
 new file mode 100644
-index 0000000000000000000000000000000000000000..b57be7fe4a8206d6481f47d5be32597bce3616e8
+index 0000000000000000000000000000000000000000..5d0638deb27f5fbf248e225e05e0be620ea7f2f0
 --- /dev/null
 +++ b/web/src/locales/fr-FR/ui.json
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,39 @@
 +{
 +  "system_menu": "Menu système",
 +  "system_menu_title": "Menu système",
@@ -1114,7 +1489,10 @@ index 0000000000000000000000000000000000000000..b57be7fe4a8206d6481f47d5be32597b
 +  "about_github_desc": "C’est un projet open source. Si vous avez un compte GitHub, soutenez-nous en laissant une étoile !",
 +  "about_contributors": "Contributeurs",
 +  "about_contributors_desc": "Merci à toutes les personnes qui ont contribué à ce projet open source !",
-+  "translation_language": "Langue de traduction"
++  "translation_language": "Langue de traduction",
++  "runtime_language_mode": "Mode langue runtime (CH/EN)",
++  "dataset_language": "Langue du jeu de données",
++  "local_event_translation": "Activer la traduction locale des événements"
 +}
 diff --git a/web/src/locales/index.ts b/web/src/locales/index.ts
 index 9c2d678be09f2e4d81f8f1acb7de8ca6c50bf826..1d1f991d17075b8466e48d3db56397a02fd49882 100644
@@ -1204,10 +1582,10 @@ index 0000000000000000000000000000000000000000..e20c8af030f4263f0407dd8140053cd8
 +  return langMap[lang] || 'en';
 +};
 diff --git a/web/src/locales/zh-CN/ui.json b/web/src/locales/zh-CN/ui.json
-index 4fb37ae2b78bb162a63cac506dc364463170c5cb..baeafa97afe35569c36370d7969bc2fe54eead5f 100644
+index 4fb37ae2b78bb162a63cac506dc364463170c5cb..5604b56122f8f19b9a0a70eabf7e24118bcb0d3f 100644
 --- a/web/src/locales/zh-CN/ui.json
 +++ b/web/src/locales/zh-CN/ui.json
-@@ -9,27 +9,28 @@
+@@ -9,27 +9,31 @@
    "delete_character": "删除角色",
    "settings": "设置",
    "achievements": "成就",
@@ -1237,13 +1615,16 @@ index 4fb37ae2b78bb162a63cac506dc364463170c5cb..baeafa97afe35569c36370d7969bc2fe
 -}
 \ No newline at end of file
 +  "about_contributors_desc": "感谢所有参与了开源的创作者们！",
-+  "translation_language": "翻译语言"
++  "translation_language": "翻译语言",
++  "runtime_language_mode": "运行语言模式（仅中文/英文）",
++  "dataset_language": "数据集语言",
++  "local_event_translation": "启用本地事件翻译"
 +}
 diff --git a/web/src/locales/zh-TW/ui.json b/web/src/locales/zh-TW/ui.json
-index 8ff503a8466a59ba77fd4679f74c6f857593b7ed..5ea0c6587e7daa851dfeca2b0f56fbc8fe193aa1 100644
+index 8ff503a8466a59ba77fd4679f74c6f857593b7ed..c9a6921fcb5f610fab11ca2e4f681a2a73960d5b 100644
 --- a/web/src/locales/zh-TW/ui.json
 +++ b/web/src/locales/zh-TW/ui.json
-@@ -9,27 +9,28 @@
+@@ -9,27 +9,31 @@
    "delete_character": "刪除角色",
    "settings": "設定",
    "achievements": "成就",
@@ -1273,29 +1654,61 @@ index 8ff503a8466a59ba77fd4679f74c6f857593b7ed..5ea0c6587e7daa851dfeca2b0f56fbc8
 -}
 \ No newline at end of file
 +  "about_contributors_desc": "感謝所有參與了開源的創作者們！",
-+  "translation_language": "翻譯語言"
++  "translation_language": "翻譯語言",
++  "runtime_language_mode": "運行語言模式（僅中文/英文）",
++  "dataset_language": "資料集語言",
++  "local_event_translation": "啟用本地事件翻譯"
 +}
 diff --git a/web/src/stores/setting.ts b/web/src/stores/setting.ts
-index 4b0f08887eadf6b33cb84c531bbafb707525e2ea..a984e5f428d1190263c1e54e57ff249623783250 100644
+index 4b0f08887eadf6b33cb84c531bbafb707525e2ea..07faff6abaef594161a73805057c98310b4c2e58 100644
 --- a/web/src/stores/setting.ts
 +++ b/web/src/stores/setting.ts
-@@ -1,61 +1,70 @@
+@@ -1,61 +1,117 @@
  import { defineStore } from 'pinia';
  import { ref } from 'vue';
  import i18n from '../locales';
 +import { getHtmlLang, normalizeLocale, type LocaleCode } from '../locales/localeUtils';
  import { systemApi } from '../api/modules/system';
  
++type RuntimeLocaleCode = 'zh-CN' | 'en-US';
++type DataLocaleCode = 'zh-CN' | 'fr-FR';
++
++function normalizeRuntimeLocale(raw: string | null | undefined, fallback: RuntimeLocaleCode = 'zh-CN'): RuntimeLocaleCode {
++  const normalized = normalizeLocale(raw, fallback);
++  return normalized === 'en-US' ? 'en-US' : 'zh-CN';
++}
++
++function normalizeDataLocale(raw: string | null | undefined, fallback: DataLocaleCode = 'zh-CN'): DataLocaleCode {
++  const normalized = normalizeLocale(raw, fallback as LocaleCode);
++  return normalized === 'fr-FR' ? 'fr-FR' : 'zh-CN';
++}
++
  export const useSettingStore = defineStore('setting', () => {
 -  const locale = ref(localStorage.getItem('app_locale') || 'zh-CN');
+-  
 +  const uiLocale = ref<LocaleCode>(normalizeLocale(localStorage.getItem('app_locale')));
++
++  // Translation target locale for optional local event translation in frontend.
 +  const translationLocale = ref<LocaleCode>(
 +    normalizeLocale(localStorage.getItem('app_translation_locale'), uiLocale.value)
 +  );
 +
++  // Runtime/backend mode is intentionally restricted to CN or EN.
++  const runtimeLocale = ref<RuntimeLocaleCode>(
++    normalizeRuntimeLocale(localStorage.getItem('app_runtime_locale'))
++  );
++
++  // Data set locale selector (currently CN / FR).
++  const dataLocale = ref<DataLocaleCode>(
++    normalizeDataLocale(localStorage.getItem('app_data_locale'))
++  );
++
++  // Local translation is disabled by default.
++  const localEventTranslationEnabled = ref(localStorage.getItem('app_local_event_translation') === '1');
++
 +  // Backward compatibility for existing references.
 +  const locale = uiLocale;
-   
++
    // Sound settings
    const sfxVolume = ref(parseFloat(localStorage.getItem('app_sfx_volume') || '0.5'));
    const bgmVolume = ref(parseFloat(localStorage.getItem('app_bgm_volume') || '0.5'));
@@ -1311,9 +1724,9 @@ index 4b0f08887eadf6b33cb84c531bbafb707525e2ea..a984e5f428d1190263c1e54e57ff2496
    }
  
 -  async function setLocale(lang: 'zh-CN' | 'zh-TW' | 'en-US') {
-+  async function setLocale(lang: LocaleCode) {
-     // 1. Optimistic UI update
+-    // 1. Optimistic UI update
 -    locale.value = lang;
++  async function setLocale(lang: LocaleCode) {
 +    uiLocale.value = lang;
      localStorage.setItem('app_locale', lang);
      if (i18n.mode === 'legacy') {
@@ -1333,16 +1746,31 @@ index 4b0f08887eadf6b33cb84c531bbafb707525e2ea..a984e5f428d1190263c1e54e57ff2496
 -
 -    // 2. Sync with backend
 +
-+    // Update HTML lang attribute for accessibility.
 +    document.documentElement.lang = getHtmlLang(lang);
 +  }
 +
 +  async function setTranslationLocale(lang: LocaleCode) {
 +    translationLocale.value = lang;
 +    localStorage.setItem('app_translation_locale', lang);
++  }
++
++  async function setRuntimeLocale(lang: RuntimeLocaleCode) {
++    runtimeLocale.value = lang;
++    localStorage.setItem('app_runtime_locale', lang);
      await syncBackend();
    }
-   
+-  
++
++  function setDataLocale(lang: DataLocaleCode) {
++    dataLocale.value = lang;
++    localStorage.setItem('app_data_locale', lang);
++  }
++
++  function setLocalEventTranslationEnabled(enabled: boolean) {
++    localEventTranslationEnabled.value = enabled;
++    localStorage.setItem('app_local_event_translation', enabled ? '1' : '0');
++  }
++
    async function syncBackend() {
 -      try {
 -          await systemApi.setLanguage(locale.value);
@@ -1350,7 +1778,7 @@ index 4b0f08887eadf6b33cb84c531bbafb707525e2ea..a984e5f428d1190263c1e54e57ff2496
 -          console.warn('Failed to sync language with backend:', e);
 -      }
 +    try {
-+      await systemApi.setLanguage(translationLocale.value);
++      await systemApi.setLanguage(runtimeLocale.value);
 +    } catch (e) {
 +      console.warn('Failed to sync language with backend:', e);
 +    }
@@ -1360,8 +1788,14 @@ index 4b0f08887eadf6b33cb84c531bbafb707525e2ea..a984e5f428d1190263c1e54e57ff2496
      locale,
 +    uiLocale,
 +    translationLocale,
++    runtimeLocale,
++    dataLocale,
++    localEventTranslationEnabled,
      setLocale,
 +    setTranslationLocale,
++    setRuntimeLocale,
++    setDataLocale,
++    setLocalEventTranslationEnabled,
      syncBackend,
      sfxVolume,
      bgmVolume,
@@ -1370,10 +1804,10 @@ index 4b0f08887eadf6b33cb84c531bbafb707525e2ea..a984e5f428d1190263c1e54e57ff2496
    };
  });
 diff --git a/web/src/stores/socketMessageRouter.ts b/web/src/stores/socketMessageRouter.ts
-index a7c701139e2652c6256d3e0966436d555124d9f5..fb66b8e453ad9793b73639c5e07b1b7fdf7320f2 100644
+index a7c701139e2652c6256d3e0966436d555124d9f5..64331214a924dcc46df8a13b8f78aa0ca1d9e415 100644
 --- a/web/src/stores/socketMessageRouter.ts
 +++ b/web/src/stores/socketMessageRouter.ts
-@@ -1,61 +1,65 @@
+@@ -1,61 +1,61 @@
  import i18n from '@/locales'
 +import { getHtmlLang, normalizeLocale } from '@/locales/localeUtils'
  import { message } from '@/utils/discreteApi'
@@ -1394,30 +1828,33 @@ index a7c701139e2652c6256d3e0966436d555124d9f5..fb66b8e453ad9793b73639c5e07b1b7f
  }
  
  function applyLanguageSwitch(language: string) {
-+  const normalized = normalizeLocale(language, 'en-US')
-+
-   const localeRef = i18n.global.locale as unknown
-   const currentLang = i18n.mode === 'legacy'
+-  const localeRef = i18n.global.locale as unknown
+-  const currentLang = i18n.mode === 'legacy'
 -    ? localeRef as string
 -    : (localeRef as { value: string }).value
-+    ? normalizeLocale(localeRef as string, 'en-US')
-+    : normalizeLocale((localeRef as { value: string }).value, 'en-US')
- 
+-
 -  if (currentLang === language) return
-+  if (currentLang === normalized) return
- 
-   if (i18n.mode === 'legacy') {
+-
+-  if (i18n.mode === 'legacy') {
 -    (i18n.global.locale as unknown as string) = language
-+    (i18n.global.locale as unknown as string) = normalized
-   } else {
+-  } else {
 -    (i18n.global.locale as unknown as { value: string }).value = language
-+    (i18n.global.locale as unknown as { value: string }).value = normalized
-   }
+-  }
++  // Backend language hint is constrained to runtime CH/EN mode.
++  // Do not overwrite UI locale here.
++  const normalized = normalizeLocale(language, 'zh-CN')
++  const runtimeLocale = normalized === 'en-US' ? 'en-US' : 'zh-CN'
++  localStorage.setItem('app_runtime_locale', runtimeLocale)
  
 -  localStorage.setItem('app_locale', language)
 -  document.documentElement.lang = language.startsWith('zh') ? language : 'en'
-+  localStorage.setItem('app_locale', normalized)
-+  document.documentElement.lang = getHtmlLang(normalized)
++  // Keep current UI html lang untouched; UI locale is user-controlled.
++  // Optionally ensure we still have a valid value for accessibility.
++  const localeRef = i18n.global.locale as unknown
++  const currentUi = i18n.mode === 'legacy'
++    ? normalizeLocale(localeRef as string, 'zh-CN')
++    : normalizeLocale((localeRef as { value: string }).value, 'zh-CN')
++  document.documentElement.lang = getHtmlLang(currentUi)
  }
  
 +

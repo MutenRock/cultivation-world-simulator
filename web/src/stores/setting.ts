@@ -1,8 +1,10 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import i18n from '../locales';
+import { getHtmlLang, normalizeLocale, type LocaleCode } from '../locales/localeUtils';
 import { systemApi } from '../api/modules/system';
 
+<<<<<<< ours
 type LocaleCode = 'zh-CN' | 'zh-TW' | 'en-US' | 'fr-FR';
 
 const getHtmlLang = (lang: LocaleCode) => {
@@ -21,6 +23,42 @@ export const useSettingStore = defineStore('setting', () => {
     (localStorage.getItem('app_translation_locale') as LocaleCode) || uiLocale.value
   );
 
+=======
+type RuntimeLocaleCode = 'zh-CN' | 'en-US';
+type DataLocaleCode = 'zh-CN' | 'fr-FR';
+
+function normalizeRuntimeLocale(raw: string | null | undefined, fallback: RuntimeLocaleCode = 'zh-CN'): RuntimeLocaleCode {
+  const normalized = normalizeLocale(raw, fallback);
+  return normalized === 'en-US' ? 'en-US' : 'zh-CN';
+}
+
+function normalizeDataLocale(raw: string | null | undefined, fallback: DataLocaleCode = 'zh-CN'): DataLocaleCode {
+  const normalized = normalizeLocale(raw, fallback as LocaleCode);
+  return normalized === 'fr-FR' ? 'fr-FR' : 'zh-CN';
+}
+
+export const useSettingStore = defineStore('setting', () => {
+  const uiLocale = ref<LocaleCode>(normalizeLocale(localStorage.getItem('app_locale')));
+
+  // Translation target locale for optional local event translation in frontend.
+  const translationLocale = ref<LocaleCode>(
+    normalizeLocale(localStorage.getItem('app_translation_locale'), uiLocale.value)
+  );
+
+  // Runtime/backend mode is intentionally restricted to CN or EN.
+  const runtimeLocale = ref<RuntimeLocaleCode>(
+    normalizeRuntimeLocale(localStorage.getItem('app_runtime_locale'))
+  );
+
+  // Data set locale selector (currently CN / FR).
+  const dataLocale = ref<DataLocaleCode>(
+    normalizeDataLocale(localStorage.getItem('app_data_locale'))
+  );
+
+  // Local translation is disabled by default.
+  const localEventTranslationEnabled = ref(localStorage.getItem('app_local_event_translation') === '1');
+
+>>>>>>> theirs
   // Backward compatibility for existing references.
   const locale = uiLocale;
 
@@ -39,7 +77,10 @@ export const useSettingStore = defineStore('setting', () => {
   }
 
   async function setLocale(lang: LocaleCode) {
+<<<<<<< ours
     // 1) Optimistic UI update
+=======
+>>>>>>> theirs
     uiLocale.value = lang;
     localStorage.setItem('app_locale', lang);
 
@@ -49,13 +90,17 @@ export const useSettingStore = defineStore('setting', () => {
       (i18n.global.locale as any).value = lang;
     }
 
+<<<<<<< ours
     // Update HTML lang attribute for accessibility.
+=======
+>>>>>>> theirs
     document.documentElement.lang = getHtmlLang(lang);
   }
 
   async function setTranslationLocale(lang: LocaleCode) {
     translationLocale.value = lang;
     localStorage.setItem('app_translation_locale', lang);
+<<<<<<< ours
     await syncBackend();
   }
 
@@ -64,6 +109,29 @@ export const useSettingStore = defineStore('setting', () => {
       // Fallback: if backend doesn't support fr-FR, map it to en-US (or change to whatever it supports).
       const backendLang: LocaleCode = translationLocale.value === 'fr-FR' ? 'en-US' : translationLocale.value;
       await systemApi.setLanguage(backendLang);
+=======
+  }
+
+  async function setRuntimeLocale(lang: RuntimeLocaleCode) {
+    runtimeLocale.value = lang;
+    localStorage.setItem('app_runtime_locale', lang);
+    await syncBackend();
+  }
+
+  function setDataLocale(lang: DataLocaleCode) {
+    dataLocale.value = lang;
+    localStorage.setItem('app_data_locale', lang);
+  }
+
+  function setLocalEventTranslationEnabled(enabled: boolean) {
+    localEventTranslationEnabled.value = enabled;
+    localStorage.setItem('app_local_event_translation', enabled ? '1' : '0');
+  }
+
+  async function syncBackend() {
+    try {
+      await systemApi.setLanguage(runtimeLocale.value);
+>>>>>>> theirs
     } catch (e) {
       console.warn('Failed to sync language with backend:', e);
     }
@@ -73,8 +141,19 @@ export const useSettingStore = defineStore('setting', () => {
     locale,
     uiLocale,
     translationLocale,
+<<<<<<< ours
     setLocale,
     setTranslationLocale,
+=======
+    runtimeLocale,
+    dataLocale,
+    localEventTranslationEnabled,
+    setLocale,
+    setTranslationLocale,
+    setRuntimeLocale,
+    setDataLocale,
+    setLocalEventTranslationEnabled,
+>>>>>>> theirs
     syncBackend,
     sfxVolume,
     bgmVolume,
