@@ -85,7 +85,13 @@ def update_paths_for_language(lang_code: str = None):
     # 这里我们保留 CONFIG.paths.game_configs 作为"逻辑概念上的"配置集合根目录（虽然物理上分开了）
     # 但实际上加载逻辑会在 df.py 中处理合并
     CONFIG.paths.game_configs = Path("static/game_configs")
-    CONFIG.paths.templates = target_dir / "templates"
+
+    # Templates fallback: use localized templates when available, otherwise en-US.
+    templates_dir = target_dir / "templates"
+    if templates_dir.exists():
+        CONFIG.paths.templates = templates_dir
+    else:
+        CONFIG.paths.templates = locales_dir / "en-US" / "templates"
     
     # 简单的存在性检查日志
     if not CONFIG.paths.game_configs.exists():
