@@ -35,6 +35,17 @@ const languageOptions = [
   { label: 'Français', value: 'fr-FR' }
 ]
 
+
+const runtimeLanguageOptions = [
+  { label: '简体中文 (zh-CN)', value: 'zh-CN' },
+  { label: 'English (en-US)', value: 'en-US' }
+]
+
+const dataLocaleOptions = [
+  { label: '简体中文数据 (zh-CN)', value: 'zh-CN' },
+  { label: 'Français données (fr-FR)', value: 'fr-FR' }
+]
+
 function switchTab(tab: typeof activeTab.value) {
   activeTab.value = tab
 }
@@ -241,6 +252,41 @@ watch(() => props.visible, (val) => {
                 :options="languageOptions"
                 @update:value="settingStore.setTranslationLocale"
                 style="width: 200px"
+              />
+            </div>
+
+
+            <div class="setting-item">
+              <div class="setting-label-group">
+                <span class="setting-label">{{ t('ui.runtime_language_mode') }}</span>
+              </div>
+              <n-select
+                v-model:value="settingStore.runtimeLocale"
+                :options="runtimeLanguageOptions"
+                @update:value="settingStore.setRuntimeLocale"
+                style="width: 200px"
+              />
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-label-group">
+                <span class="setting-label">{{ t('ui.dataset_language') }}</span>
+              </div>
+              <n-select
+                v-model:value="settingStore.dataLocale"
+                :options="dataLocaleOptions"
+                @update:value="settingStore.setDataLocale"
+                style="width: 200px"
+              />
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-label-group">
+                <span class="setting-label">{{ t('ui.local_event_translation') }}</span>
+              </div>
+              <n-switch
+                :value="settingStore.localEventTranslationEnabled"
+                @update:value="settingStore.setLocalEventTranslationEnabled"
               />
             </div>
           </div>
