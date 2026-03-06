@@ -64,11 +64,11 @@ describe('useSettingStore', () => {
       setActivePinia(createPinia())
       const newStore = useSettingStore()
 
-      expect(newStore.locale).toBe('en-US')
+      expect(newStore.uiLocale).toBe('en-US')
     })
 
     it('should default to zh-CN if localStorage is empty', () => {
-      expect(store.locale).toBe('zh-CN')
+      expect(store.uiLocale).toBe('zh-CN')
     })
   })
 
@@ -76,7 +76,7 @@ describe('useSettingStore', () => {
     it('should update locale value', async () => {
       await store.setLocale('en-US')
 
-      expect(store.locale).toBe('en-US')
+      expect(store.uiLocale).toBe('en-US')
     })
 
     it('should save locale to localStorage', async () => {
@@ -121,18 +121,27 @@ describe('useSettingStore', () => {
       expect(document.documentElement.lang).toBe('zh-TW')
     })
 
-    it('should call syncBackend after updating locale', async () => {
+    it('should not sync backend when only UI locale changes', async () => {
       await store.setLocale('en-US')
 
-      expect(mockSetLanguage).toHaveBeenCalledWith('en-US')
+      expect(mockSetLanguage).not.toHaveBeenCalled()
+    })
+  })
+
+
+  describe('setTranslationLocale', () => {
+    it('should save translation locale to localStorage and sync backend', async () => {
+      await store.setTranslationLocale('fr-FR')
+
+      expect(store.translationLocale).toBe('fr-FR')
+      expect(localStorageMock.app_translation_locale).toBe('fr-FR')
+      expect(mockSetLanguage).toHaveBeenCalledWith('fr-FR')
     })
   })
 
   describe('syncBackend', () => {
-    it('should call systemApi.setLanguage with current locale', async () => {
-      store.locale = 'zh-TW'
-
-      await store.syncBackend()
+    it('should call systemApi.setLanguage with translation locale', async () => {
+      await store.setTranslationLocale('zh-TW')
 
       expect(mockSetLanguage).toHaveBeenCalledWith('zh-TW')
     })

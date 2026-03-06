@@ -220,9 +220,26 @@ watch(() => props.visible, (val) => {
                 <span class="setting-label">{{ t('ui.language') }}</span>
               </div>
               <n-select
-                v-model:value="settingStore.locale"
+                v-model:value="settingStore.uiLocale"
                 :options="languageOptions"
                 @update:value="settingStore.setLocale"
+                style="width: 200px"
+              />
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-label-group">
+                <n-icon size="24" color="#eee" class="setting-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M3 5h12v2H3V5m0 4h18v2H3V9m0 4h12v2H3v-2m0 4h18v2H3v-2Z"/>
+                  </svg>
+                </n-icon>
+                <span class="setting-label">{{ t('ui.translation_language') }}</span>
+              </div>
+              <n-select
+                v-model:value="settingStore.translationLocale"
+                :options="languageOptions"
+                @update:value="settingStore.setTranslationLocale"
                 style="width: 200px"
               />
             </div>
