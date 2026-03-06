@@ -1,4 +1,5 @@
 import i18n from '@/locales'
+import { getHtmlLang, normalizeLocale } from '@/locales/localeUtils'
 import { message } from '@/utils/discreteApi'
 import { logError, logWarn } from '@/utils/appError'
 import type {
@@ -17,23 +18,25 @@ interface SocketRouterDeps {
 }
 
 function applyLanguageSwitch(language: string) {
+  const normalized = normalizeLocale(language, 'en-US')
+
   const localeRef = i18n.global.locale as unknown
   const currentLang = i18n.mode === 'legacy'
-    ? localeRef as string
-    : (localeRef as { value: string }).value
+    ? normalizeLocale(localeRef as string, 'en-US')
+    : normalizeLocale((localeRef as { value: string }).value, 'en-US')
 
-  if (currentLang === language) return
+  if (currentLang === normalized) return
 
   if (i18n.mode === 'legacy') {
-    (i18n.global.locale as unknown as string) = language
+    (i18n.global.locale as unknown as string) = normalized
   } else {
-    (i18n.global.locale as unknown as { value: string }).value = language
+    (i18n.global.locale as unknown as { value: string }).value = normalized
   }
 
-  localStorage.setItem('app_locale', language)
-  const langMap: Record<string, string> = { 'zh-CN': 'zh-CN', 'zh-TW': 'zh-TW', 'en-US': 'en', 'fr-FR': 'fr' }
-  document.documentElement.lang = langMap[language] || 'en'
+  localStorage.setItem('app_locale', normalized)
+  document.documentElement.lang = getHtmlLang(normalized)
 }
+
 
 function handleTickMessage(payload: TickPayloadDTO, deps: SocketRouterDeps) {
   deps.worldStore.handleTick(payload)

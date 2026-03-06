@@ -70,6 +70,23 @@ describe('useSettingStore', () => {
     it('should default to zh-CN if localStorage is empty', () => {
       expect(store.uiLocale).toBe('zh-CN')
     })
+
+
+    it('should normalize fr-fr from localStorage to fr-FR', () => {
+      localStorageMock = { app_locale: 'fr-fr' }
+      setActivePinia(createPinia())
+      const newStore = useSettingStore()
+
+      expect(newStore.uiLocale).toBe('fr-FR')
+    })
+
+    it('should default translation locale to normalized UI locale', () => {
+      localStorageMock = { app_locale: 'fr-fr' }
+      setActivePinia(createPinia())
+      const newStore = useSettingStore()
+
+      expect(newStore.translationLocale).toBe('fr-FR')
+    })
   })
 
   describe('setLocale', () => {
