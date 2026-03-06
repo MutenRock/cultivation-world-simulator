@@ -1,24 +1,13 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import i18n from '../locales';
+import { getHtmlLang, normalizeLocale, type LocaleCode } from '../locales/localeUtils';
 import { systemApi } from '../api/modules/system';
 
-type LocaleCode = 'zh-CN' | 'zh-TW' | 'en-US' | 'fr-FR';
-
-const getHtmlLang = (lang: LocaleCode) => {
-  const langMap: Record<LocaleCode, string> = {
-    'zh-CN': 'zh-CN',
-    'zh-TW': 'zh-TW',
-    'en-US': 'en',
-    'fr-FR': 'fr'
-  };
-  return langMap[lang] || 'en';
-};
-
 export const useSettingStore = defineStore('setting', () => {
-  const uiLocale = ref<LocaleCode>((localStorage.getItem('app_locale') as LocaleCode) || 'zh-CN');
+  const uiLocale = ref<LocaleCode>(normalizeLocale(localStorage.getItem('app_locale')));
   const translationLocale = ref<LocaleCode>(
-    (localStorage.getItem('app_translation_locale') as LocaleCode) || uiLocale.value
+    normalizeLocale(localStorage.getItem('app_translation_locale'), uiLocale.value)
   );
 
   // Backward compatibility for existing references.
