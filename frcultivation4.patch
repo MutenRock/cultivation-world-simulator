@@ -35,8 +35,414 @@ index d6bc86808c00d786165363f6b142034eda06072b..cb63b3734c09ddad87fbf0c34f37932b
          from src.utils.config import update_paths_for_language
          update_paths_for_language(self._current.value)
  
+diff --git a/src/i18n/__init__.py b/src/i18n/__init__.py
+index a59dcc9665ec7638d03814938b170e9721857676..212afe1c5279d90505133cc185850a0d5b0a5b6e 100644
+--- a/src/i18n/__init__.py
++++ b/src/i18n/__init__.py
+@@ -28,111 +28,139 @@ def _lang_to_locale(lang_code: str) -> str:
+     """
+     Convert language code to gettext locale name.
+     Now we use the same code as folder name (e.g. zh-CN).
+     
+     Args:
+         lang_code: Language code like "zh-CN" or "en-US".
+         
+     Returns:
+         Locale name like "zh-CN" or "en-US".
+     """
+     return lang_code
+ 
+ 
+ def _get_current_lang() -> str:
+     """Get current language from LanguageManager."""
+     try:
+         from src.classes.language import language_manager
+         return str(language_manager)
+     except ImportError:
+         return "zh-CN"
+ 
+ 
+ def _get_translation() -> Optional[gettext.GNUTranslations]:
+     """
+     Get translation object for current language.
+-    
++
+     Returns:
+         GNUTranslations object or None if not found.
+     """
+     lang = _get_current_lang()
+-    
++
+     if lang not in _translations:
+         locale_dir = _get_locale_dir()
+         locale_name = _lang_to_locale(lang)
+-        
++        fallback_used = False
++
+         try:
+             trans = gettext.translation(
+                 "messages",
+                 localedir=str(locale_dir),
+                 languages=[locale_name]
+             )
+         except FileNotFoundError:
+             trans = None
+-
++            if locale_name != "en-US":
++                try:
++                    trans = gettext.translation(
++                        "messages",
++                        localedir=str(locale_dir),
++                        languages=["en-US"]
++                    )
++                    fallback_used = True
++                except FileNotFoundError:
++                    trans = None
++
++        config_trans = None
+         try:
+             config_trans = gettext.translation(
+                 "game_configs",
+                 localedir=str(locale_dir),
+                 languages=[locale_name]
+             )
++        except FileNotFoundError:
++            if locale_name != "en-US":
++                try:
++                    config_trans = gettext.translation(
++                        "game_configs",
++                        localedir=str(locale_dir),
++                        languages=["en-US"]
++                    )
++                    fallback_used = True
++                except FileNotFoundError:
++                    config_trans = None
++
++        if config_trans is not None:
+             if trans:
+                 trans.add_fallback(config_trans)
+             else:
+                 trans = config_trans
+-        except FileNotFoundError:
+-            pass
++
++        if trans is not None and fallback_used:
++            setattr(trans, "_is_fallback_en_us", True)
+ 
+         _translations[lang] = trans
+-    
++
+     return _translations.get(lang)
+ 
+ 
+ def t(message: str, **kwargs) -> str:
+     """
+     Translate a message and format with kwargs.
+     
+     The message key should be in English. Translations map English -> target language.
+     If no translation is found, the original message is returned.
+     
+     Args:
+         message: The message to translate (English).
+         **kwargs: Format arguments for the message.
+         
+     Returns:
+         Translated and formatted string.
+         
+     Example:
+         t("{winner} defeated {loser}", winner="Zhang San", loser="Li Si")
+         # zh-CN: "Zhang San 战胜了 Li Si"
+         # en-US: "Zhang San defeated Li Si"
+     """
+     trans = _get_translation()
+     
+     if trans:
+         translated = trans.gettext(message)
+     else:
+         translated = message
+     
+-    # Check for missing translation if not in English
+-    if _get_current_lang() != "en-US" and translated == message and message.strip():
++    is_fallback = bool(getattr(trans, "_is_fallback_en_us", False)) if trans else False
++
++    # Check for missing translation if not in English and not using deliberate en-US fallback
++    if _get_current_lang() != "en-US" and not is_fallback and translated == message and message.strip():
+         logger.warning(f"[i18n] Missing translation for msgid: '{message}'")
+     
+     if kwargs:
+         try:
+             return translated.format(**kwargs)
+         except KeyError as e:
+             # If format fails, return translated string without formatting.
+             return translated
+     return translated
+ 
+ 
+ def reload_translations() -> None:
+     """
+     Clear translation cache.
+     
+     Call this after language changes to reload translations.
+     """
+     _translations.clear()
+ 
+ 
+ __all__ = ["t", "reload_translations"]
+diff --git a/src/utils/config.py b/src/utils/config.py
+index 138eb0eba072b54dfc4d215a48dfbdd3eb373268..244735af1f4e4709c5628e5f185a952852ee9d35 100644
+--- a/src/utils/config.py
++++ b/src/utils/config.py
+@@ -63,36 +63,42 @@ def update_paths_for_language(lang_code: str = None):
+             
+             lang_code = saved_lang
+     
+     if lang_code is None:
+         lang_code = "zh-CN"
+         
+     # Normalize lang_code (e.g. zh_CN -> zh-CN) to match folder structure in static/locales
+     lang_code = lang_code.replace("_", "-")
+     
+     # 默认 locales 目录
+     locales_dir = CONFIG.paths.get("locales", Path("static/locales"))
+     
+     # 构建特定语言的目录
+     target_dir = locales_dir / lang_code
+     
+     # 更新配置路径
+     # 语言无关的配置目录
+     CONFIG.paths.shared_game_configs = Path("static/game_configs")
+     # 语言相关的配置目录
+     CONFIG.paths.localized_game_configs = target_dir / "game_configs"
+     
+     # CONFIG.paths.game_configs 指向统一的数据源，不再区分语言目录
+     # 这里我们保留 CONFIG.paths.game_configs 作为"逻辑概念上的"配置集合根目录（虽然物理上分开了）
+     # 但实际上加载逻辑会在 df.py 中处理合并
+     CONFIG.paths.game_configs = Path("static/game_configs")
+-    CONFIG.paths.templates = target_dir / "templates"
++
++    # Templates fallback: use localized templates when available, otherwise en-US.
++    templates_dir = target_dir / "templates"
++    if templates_dir.exists():
++        CONFIG.paths.templates = templates_dir
++    else:
++        CONFIG.paths.templates = locales_dir / "en-US" / "templates"
+     
+     # 简单的存在性检查日志
+     if not CONFIG.paths.game_configs.exists():
+         print(f"[Config] Warning: Game configs dir not found at {CONFIG.paths.game_configs}")
+     else:
+         print(f"[Config] Switched language context to {lang_code} (Configs using Single Source)")
+ 
+ # 模块加载时自动初始化默认路径，确保 CONFIG.paths.game_configs 存在，避免 import 时 KeyError
+ update_paths_for_language()
+ 
+diff --git a/web/package.json b/web/package.json
+index b3e660e5aa9322cfe0a21fa9c1f737d9b8fa4312..7550dcafc2172d55ba99f5a632062586cd788292 100644
+--- a/web/package.json
++++ b/web/package.json
+@@ -1,38 +1,40 @@
+ {
+   "name": "web",
+   "private": true,
+   "license": "CC-BY-NC-SA-4.0",
+   "version": "0.0.0",
+   "type": "module",
+   "scripts": {
+     "dev": "vite",
+     "build": "tsc && vite build",
+     "preview": "vite preview",
+     "test": "vitest",
+     "test:run": "vitest run",
+     "test:coverage": "vitest run --coverage",
+-    "type-check": "tsc --noEmit"
++    "type-check": "tsc --noEmit",
++    "i18n:check": "node ./tools/i18n/check-locales.mjs",
++    "i18n:hardcoded": "node ./tools/i18n/detect-hardcoded-ui.mjs"
+   },
+   "devDependencies": {
+     "@testing-library/vue": "^8.1.0",
+     "@vitejs/plugin-vue": "^5.2.4",
+     "@vitest/coverage-v8": "^2.1.8",
+     "@vue/test-utils": "^2.4.6",
+     "jsdom": "^25.0.1",
+     "msw": "^2.7.0",
+     "sass": "^1.94.1",
+     "typescript": "~5.9.3",
+     "vite": "^5.4.21",
+     "vitest": "^2.1.8"
+   },
+   "dependencies": {
+     "@vueuse/core": "^14.0.0",
+     "naive-ui": "^2.43.2",
+     "pinia": "^3.0.4",
+     "pixi-viewport": "^6.0.3",
+     "pixi.js": "^8.14.2",
+     "vfonts": "^0.0.3",
+     "vue-i18n": "^9.14.5",
+     "vue3-pixi": "^1.0.0-beta.3"
+   }
+ }
+diff --git a/web/src/__tests__/stores/setting.test.ts b/web/src/__tests__/stores/setting.test.ts
+index 79b0e5a2d47d3e8287d337ca03be5d2d8f8d6013..2d43a837e18735db31a80545638f4a22a3ac3418 100644
+--- a/web/src/__tests__/stores/setting.test.ts
++++ b/web/src/__tests__/stores/setting.test.ts
+@@ -42,119 +42,145 @@ describe('useSettingStore', () => {
+     })
+     vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key: string, value: string) => {
+       localStorageMock[key] = value
+     })
+ 
+     // Reset mocks.
+     vi.clearAllMocks()
+     mockI18nLocale = { value: 'zh-CN' }
+     mockI18nMode = 'composition'
+ 
+     setActivePinia(createPinia())
+     store = useSettingStore()
+   })
+ 
+   afterEach(() => {
+     vi.restoreAllMocks()
+   })
+ 
+   describe('initial state', () => {
+     it('should read locale from localStorage if available', () => {
+       // Reset with new localStorage value.
+       localStorageMock = { app_locale: 'en-US' }
+       setActivePinia(createPinia())
+       const newStore = useSettingStore()
+ 
+-      expect(newStore.locale).toBe('en-US')
++      expect(newStore.uiLocale).toBe('en-US')
+     })
+ 
+     it('should default to zh-CN if localStorage is empty', () => {
+-      expect(store.locale).toBe('zh-CN')
++      expect(store.uiLocale).toBe('zh-CN')
++    })
++
++
++    it('should normalize fr-fr from localStorage to fr-FR', () => {
++      localStorageMock = { app_locale: 'fr-fr' }
++      setActivePinia(createPinia())
++      const newStore = useSettingStore()
++
++      expect(newStore.uiLocale).toBe('fr-FR')
++    })
++
++    it('should default translation locale to normalized UI locale', () => {
++      localStorageMock = { app_locale: 'fr-fr' }
++      setActivePinia(createPinia())
++      const newStore = useSettingStore()
++
++      expect(newStore.translationLocale).toBe('fr-FR')
+     })
+   })
+ 
+   describe('setLocale', () => {
+     it('should update locale value', async () => {
+       await store.setLocale('en-US')
+ 
+-      expect(store.locale).toBe('en-US')
++      expect(store.uiLocale).toBe('en-US')
+     })
+ 
+     it('should save locale to localStorage', async () => {
+       await store.setLocale('zh-TW')
+ 
+       expect(localStorageMock.app_locale).toBe('zh-TW')
+     })
+ 
+     it('should update i18n.global.locale in composition mode', async () => {
+       mockI18nMode = 'composition'
+       mockI18nLocale = { value: 'zh-CN' }
+ 
+       await store.setLocale('en-US')
+ 
+       expect((mockI18nLocale as { value: string }).value).toBe('en-US')
+     })
+ 
+     it('should update i18n.global.locale in legacy mode', async () => {
+       mockI18nMode = 'legacy'
+       mockI18nLocale = 'zh-CN'
+ 
+       await store.setLocale('en-US')
+ 
+       expect(mockI18nLocale).toBe('en-US')
+     })
+ 
+     it('should update document.documentElement.lang', async () => {
+       await store.setLocale('en-US')
+ 
+       expect(document.documentElement.lang).toBe('en')
+     })
+ 
+     it('should set correct HTML lang for zh-CN', async () => {
+       await store.setLocale('zh-CN')
+ 
+       expect(document.documentElement.lang).toBe('zh-CN')
+     })
+ 
+     it('should set correct HTML lang for zh-TW', async () => {
+       await store.setLocale('zh-TW')
+ 
+       expect(document.documentElement.lang).toBe('zh-TW')
+     })
+ 
+-    it('should call syncBackend after updating locale', async () => {
++    it('should not sync backend when only UI locale changes', async () => {
+       await store.setLocale('en-US')
+ 
+-      expect(mockSetLanguage).toHaveBeenCalledWith('en-US')
++      expect(mockSetLanguage).not.toHaveBeenCalled()
+     })
+   })
+ 
+-  describe('syncBackend', () => {
+-    it('should call systemApi.setLanguage with current locale', async () => {
+-      store.locale = 'zh-TW'
+ 
+-      await store.syncBackend()
++  describe('setTranslationLocale', () => {
++    it('should save translation locale to localStorage and sync backend', async () => {
++      await store.setTranslationLocale('fr-FR')
++
++      expect(store.translationLocale).toBe('fr-FR')
++      expect(localStorageMock.app_translation_locale).toBe('fr-FR')
++      expect(mockSetLanguage).toHaveBeenCalledWith('fr-FR')
++    })
++  })
++
++  describe('syncBackend', () => {
++    it('should call systemApi.setLanguage with translation locale', async () => {
++      await store.setTranslationLocale('zh-TW')
+ 
+       expect(mockSetLanguage).toHaveBeenCalledWith('zh-TW')
+     })
+ 
+     it('should catch errors and log warning', async () => {
+       const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+       mockSetLanguage.mockRejectedValueOnce(new Error('Network error'))
+ 
+       await store.syncBackend()
+ 
+       expect(consoleSpy).toHaveBeenCalledWith(
+         'Failed to sync language with backend:',
+         expect.any(Error)
+       )
+ 
+       consoleSpy.mockRestore()
+     })
+ 
+     it('should not throw when API fails', async () => {
+       mockSetLanguage.mockRejectedValueOnce(new Error('API error'))
+ 
+       // Should not throw.
+       await expect(store.syncBackend()).resolves.not.toThrow()
+     })
+   })
 diff --git a/web/src/components/SystemMenu.vue b/web/src/components/SystemMenu.vue
-index b4161ccf289495bf48ac1d551e63c0c33e3a9bfe..03c1d3642706fbd4a50b8da9dc54761fd28cb34c 100644
+index b4161ccf289495bf48ac1d551e63c0c33e3a9bfe..3f0f37d45e14bea5d7a97b0d1ddf285144a49393 100644
 --- a/web/src/components/SystemMenu.vue
 +++ b/web/src/components/SystemMenu.vue
 @@ -9,51 +9,52 @@ import DeleteAvatarPanel from './game/panels/system/DeleteAvatarPanel.vue'
@@ -93,7 +499,7 @@ index b4161ccf289495bf48ac1d551e63c0c33e3a9bfe..03c1d3642706fbd4a50b8da9dc54761f
  })
  </script>
  
-@@ -194,51 +195,51 @@ watch(() => props.visible, (val) => {
+@@ -194,59 +195,76 @@ watch(() => props.visible, (val) => {
                  <!-- SFX Control -->
                  <div class="volume-row">
                    <span class="volume-label">{{ t('ui.sfx_volume') }}</span>
@@ -123,12 +529,30 @@ index b4161ccf289495bf48ac1d551e63c0c33e3a9bfe..03c1d3642706fbd4a50b8da9dc54761f
 +                <span class="setting-label">{{ t('ui.language') }}</span>
                </div>
                <n-select
-                 v-model:value="settingStore.locale"
+-                v-model:value="settingStore.locale"
++                v-model:value="settingStore.uiLocale"
                  :options="languageOptions"
                  @update:value="settingStore.setLocale"
                  style="width: 200px"
                />
              </div>
++
++            <div class="setting-item">
++              <div class="setting-label-group">
++                <n-icon size="24" color="#eee" class="setting-icon">
++                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
++                    <path fill="currentColor" d="M3 5h12v2H3V5m0 4h18v2H3V9m0 4h12v2H3v-2m0 4h18v2H3v-2Z"/>
++                  </svg>
++                </n-icon>
++                <span class="setting-label">{{ t('ui.translation_language') }}</span>
++              </div>
++              <n-select
++                v-model:value="settingStore.translationLocale"
++                :options="languageOptions"
++                @update:value="settingStore.setTranslationLocale"
++                style="width: 200px"
++              />
++            </div>
            </div>
          </div>
  
@@ -146,6 +570,50 @@ index b4161ccf289495bf48ac1d551e63c0c33e3a9bfe..03c1d3642706fbd4a50b8da9dc54761f
                      <span class="btn-desc">{{ t('ui.about_github_desc') }}</span>
                    </div>
                  </div>
+                 <div class="btn-arrow">❯</div>
+               </button>
+               
+               <button class="custom-action-btn" @click="openLink('https://github.com/4thfever/cultivation-world-simulator/blob/main/CONTRIBUTORS.md')" v-sound>
+                 <div class="btn-content">
+                   <div class="btn-icon">👥</div>
+                   <div class="btn-text-group">
+                     <span class="btn-title">{{ t('ui.about_contributors') }}</span>
+diff --git a/web/src/locales/en-US/ui.json b/web/src/locales/en-US/ui.json
+index 64e1e129d58afc891fba13284b15e7a13291aecb..d0edb000dafe9bdd663c7331b982052a0708e0e9 100644
+--- a/web/src/locales/en-US/ui.json
++++ b/web/src/locales/en-US/ui.json
+@@ -9,27 +9,28 @@
+   "delete_character": "Delete Character",
+   "settings": "Settings",
+   "achievements": "Achievements",
+   "exit": "Exit",
+   "other": "Other",
+   "sound": "Sound",
+   "bgm_volume": "Music",
+   "sfx_volume": "Sound FX",
+   "language": "Language",
+   "chinese": "Simplified Chinese",
+   "english": "English",
+   "back": "Back",
+   "confirm": "Confirm",
+   "cancel": "Cancel",
+   "llm_settings": "LLM Settings",
+   "other_options": "Other Options",
+   "other_options_desc": "Manage game process and exit.",
+   "return_to_main": "Return to Main Menu",
+   "return_to_main_desc": "Return to title screen (Unsaved progress will be lost)",
+   "quit_game": "Quit Game",
+   "quit_game_desc": "Close application and exit to desktop",
+   "about": "About",
+   "about_github": "Support on GitHub",
+   "about_github_desc": "This is an open-source project. If you have a GitHub account, please support us with a Star!",
+   "about_contributors": "Contributors",
+-  "about_contributors_desc": "Thanks to all the creators who contributed to this open-source project!"
+-}
+\ No newline at end of file
++  "about_contributors_desc": "Thanks to all the creators who contributed to this open-source project!",
++  "translation_language": "Translation Language"
++}
 diff --git a/web/src/locales/fr-FR/attributes.json b/web/src/locales/fr-FR/attributes.json
 new file mode 100644
 index 0000000000000000000000000000000000000000..12bda6d101e5085e948d77bf77aa86f7e541bbd7
@@ -608,10 +1076,10 @@ index 0000000000000000000000000000000000000000..939f35640b1f6fed4053b14ab2ebb206
 +}
 diff --git a/web/src/locales/fr-FR/ui.json b/web/src/locales/fr-FR/ui.json
 new file mode 100644
-index 0000000000000000000000000000000000000000..ca205703b5f0456e8907fb850e9759811196c854
+index 0000000000000000000000000000000000000000..b57be7fe4a8206d6481f47d5be32597bce3616e8
 --- /dev/null
 +++ b/web/src/locales/fr-FR/ui.json
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,36 @@
 +{
 +  "system_menu": "Menu système",
 +  "system_menu_title": "Menu système",
@@ -645,14 +1113,16 @@ index 0000000000000000000000000000000000000000..ca205703b5f0456e8907fb850e975981
 +  "about_github": "Soutenir sur GitHub",
 +  "about_github_desc": "C’est un projet open source. Si vous avez un compte GitHub, soutenez-nous en laissant une étoile !",
 +  "about_contributors": "Contributeurs",
-+  "about_contributors_desc": "Merci à toutes les personnes qui ont contribué à ce projet open source !"
++  "about_contributors_desc": "Merci à toutes les personnes qui ont contribué à ce projet open source !",
++  "translation_language": "Langue de traduction"
 +}
 diff --git a/web/src/locales/index.ts b/web/src/locales/index.ts
-index 9c2d678be09f2e4d81f8f1acb7de8ca6c50bf826..d22c7624cab14ed3273a15cd53777791888afd94 100644
+index 9c2d678be09f2e4d81f8f1acb7de8ca6c50bf826..1d1f991d17075b8466e48d3db56397a02fd49882 100644
 --- a/web/src/locales/index.ts
 +++ b/web/src/locales/index.ts
-@@ -1,47 +1,50 @@
+@@ -1,47 +1,51 @@
  import { createI18n } from 'vue-i18n';
++import { normalizeLocale } from './localeUtils';
  
  /**
   * 自动加载指定语言目录下的所有 JSON 模块
@@ -697,24 +1167,134 @@ index 9c2d678be09f2e4d81f8f1acb7de8ca6c50bf826..d22c7624cab14ed3273a15cd53777791
 -const i18n = createI18n<[MessageSchema], 'en-US' | 'zh-CN' | 'zh-TW'>({
 +const i18n = createI18n<[MessageSchema], 'en-US' | 'zh-CN' | 'zh-TW' | 'fr-FR'>({
    legacy: false, // 使用 Composition API 模式
-   locale: localStorage.getItem('app_locale') || 'zh-CN', // 默认语言
+-  locale: localStorage.getItem('app_locale') || 'zh-CN', // 默认语言
++  locale: normalizeLocale(localStorage.getItem('app_locale')), // 默认语言
    fallbackLocale: 'en-US', // 回退语言
    messages: messages as any
  });
  
  export default i18n;
+diff --git a/web/src/locales/localeUtils.ts b/web/src/locales/localeUtils.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..e20c8af030f4263f0407dd8140053cd846fb8094
+--- /dev/null
++++ b/web/src/locales/localeUtils.ts
+@@ -0,0 +1,23 @@
++export type LocaleCode = 'zh-CN' | 'zh-TW' | 'en-US' | 'fr-FR';
++
++const SUPPORTED_LOCALES: LocaleCode[] = ['zh-CN', 'zh-TW', 'en-US', 'fr-FR'];
++
++export const normalizeLocale = (raw: string | null | undefined, fallback: LocaleCode = 'zh-CN'): LocaleCode => {
++  if (!raw) return fallback;
++
++  const normalized = raw.replace('_', '-').toLowerCase();
++  const match = SUPPORTED_LOCALES.find((lang) => lang.toLowerCase() === normalized);
++
++  return match || fallback;
++};
++
++export const getHtmlLang = (lang: LocaleCode): string => {
++  const langMap: Record<LocaleCode, string> = {
++    'zh-CN': 'zh-CN',
++    'zh-TW': 'zh-TW',
++    'en-US': 'en',
++    'fr-FR': 'fr'
++  };
++
++  return langMap[lang] || 'en';
++};
+diff --git a/web/src/locales/zh-CN/ui.json b/web/src/locales/zh-CN/ui.json
+index 4fb37ae2b78bb162a63cac506dc364463170c5cb..baeafa97afe35569c36370d7969bc2fe54eead5f 100644
+--- a/web/src/locales/zh-CN/ui.json
++++ b/web/src/locales/zh-CN/ui.json
+@@ -9,27 +9,28 @@
+   "delete_character": "删除角色",
+   "settings": "设置",
+   "achievements": "成就",
+   "exit": "离开",
+   "other": "其他",
+   "sound": "音效",
+   "bgm_volume": "背景音乐",
+   "sfx_volume": "UI音效",
+   "language": "语言",
+   "chinese": "简体中文",
+   "english": "English",
+   "back": "返回",
+   "confirm": "确定",
+   "cancel": "取消",
+   "llm_settings": "LLM设置",
+   "other_options": "其他选项",
+   "other_options_desc": "管理游戏进程和退出。",
+   "return_to_main": "回到主菜单",
+   "return_to_main_desc": "返回标题画面（未保存的进度将丢失）",
+   "quit_game": "结束游戏",
+   "quit_game_desc": "关闭程序并退出到桌面",
+   "about": "关于",
+   "about_github": "GitHub 源码支持",
+   "about_github_desc": "本项目是开源项目，如果你有 GitHub 账号，请多多点 Star 支持！",
+   "about_contributors": "贡献者名单",
+-  "about_contributors_desc": "感谢所有参与了开源的创作者们！"
+-}
+\ No newline at end of file
++  "about_contributors_desc": "感谢所有参与了开源的创作者们！",
++  "translation_language": "翻译语言"
++}
+diff --git a/web/src/locales/zh-TW/ui.json b/web/src/locales/zh-TW/ui.json
+index 8ff503a8466a59ba77fd4679f74c6f857593b7ed..5ea0c6587e7daa851dfeca2b0f56fbc8fe193aa1 100644
+--- a/web/src/locales/zh-TW/ui.json
++++ b/web/src/locales/zh-TW/ui.json
+@@ -9,27 +9,28 @@
+   "delete_character": "刪除角色",
+   "settings": "設定",
+   "achievements": "成就",
+   "exit": "離開",
+   "other": "其他",
+   "sound": "音效",
+   "bgm_volume": "背景音樂",
+   "sfx_volume": "UI音效",
+   "language": "語言",
+   "chinese": "繁體中文",
+   "english": "English",
+   "back": "返回",
+   "confirm": "確定",
+   "cancel": "取消",
+   "llm_settings": "LLM設定",
+   "other_options": "其他選項",
+   "other_options_desc": "管理遊戲進程和結束。",
+   "return_to_main": "回到主選單",
+   "return_to_main_desc": "返回標題畫面（未儲存的進度將丟失）",
+   "quit_game": "結束遊戲",
+   "quit_game_desc": "關閉程式並結束到桌面",
+   "about": "關於",
+   "about_github": "GitHub 源碼支持",
+   "about_github_desc": "本項目是開源項目，如果你有 GitHub 帳號，請多多點 Star 支持！",
+   "about_contributors": "貢獻者名單",
+-  "about_contributors_desc": "感謝所有參與了開源的創作者們！"
+-}
+\ No newline at end of file
++  "about_contributors_desc": "感謝所有參與了開源的創作者們！",
++  "translation_language": "翻譯語言"
++}
 diff --git a/web/src/stores/setting.ts b/web/src/stores/setting.ts
-index 4b0f08887eadf6b33cb84c531bbafb707525e2ea..6e9d4dd471473c1111887b24298eb54624056e4a 100644
+index 4b0f08887eadf6b33cb84c531bbafb707525e2ea..a984e5f428d1190263c1e54e57ff249623783250 100644
 --- a/web/src/stores/setting.ts
 +++ b/web/src/stores/setting.ts
-@@ -1,61 +1,63 @@
+@@ -1,61 +1,70 @@
  import { defineStore } from 'pinia';
  import { ref } from 'vue';
  import i18n from '../locales';
++import { getHtmlLang, normalizeLocale, type LocaleCode } from '../locales/localeUtils';
  import { systemApi } from '../api/modules/system';
  
  export const useSettingStore = defineStore('setting', () => {
-   const locale = ref(localStorage.getItem('app_locale') || 'zh-CN');
+-  const locale = ref(localStorage.getItem('app_locale') || 'zh-CN');
++  const uiLocale = ref<LocaleCode>(normalizeLocale(localStorage.getItem('app_locale')));
++  const translationLocale = ref<LocaleCode>(
++    normalizeLocale(localStorage.getItem('app_translation_locale'), uiLocale.value)
++  );
++
++  // Backward compatibility for existing references.
++  const locale = uiLocale;
    
    // Sound settings
    const sfxVolume = ref(parseFloat(localStorage.getItem('app_sfx_volume') || '0.5'));
@@ -731,42 +1311,57 @@ index 4b0f08887eadf6b33cb84c531bbafb707525e2ea..6e9d4dd471473c1111887b24298eb546
    }
  
 -  async function setLocale(lang: 'zh-CN' | 'zh-TW' | 'en-US') {
-+  async function setLocale(lang: 'zh-CN' | 'zh-TW' | 'en-US' | 'fr-FR') {
++  async function setLocale(lang: LocaleCode) {
      // 1. Optimistic UI update
-     locale.value = lang;
+-    locale.value = lang;
++    uiLocale.value = lang;
      localStorage.setItem('app_locale', lang);
      if (i18n.mode === 'legacy') {
-         (i18n.global.locale as any) = lang;
+-        (i18n.global.locale as any) = lang;
++      (i18n.global.locale as any) = lang;
      } else {
-         (i18n.global.locale as any).value = lang;
+-        (i18n.global.locale as any).value = lang;
++      (i18n.global.locale as any).value = lang;
      }
-     // Update HTML lang attribute for accessibility
-     const langMap: Record<string, string> = {
-       'zh-CN': 'zh-CN',
-       'zh-TW': 'zh-TW',
+-    // Update HTML lang attribute for accessibility
+-    const langMap: Record<string, string> = {
+-      'zh-CN': 'zh-CN',
+-      'zh-TW': 'zh-TW',
 -      'en-US': 'en'
-+      'en-US': 'en',
-+      'fr-FR': 'fr'
-     };
-     document.documentElement.lang = langMap[lang] || 'en';
- 
-     // 2. Sync with backend
+-    };
+-    document.documentElement.lang = langMap[lang] || 'en';
+-
+-    // 2. Sync with backend
++
++    // Update HTML lang attribute for accessibility.
++    document.documentElement.lang = getHtmlLang(lang);
++  }
++
++  async function setTranslationLocale(lang: LocaleCode) {
++    translationLocale.value = lang;
++    localStorage.setItem('app_translation_locale', lang);
      await syncBackend();
    }
    
    async function syncBackend() {
-       try {
+-      try {
 -          await systemApi.setLanguage(locale.value);
-+          const backendLang = locale.value === 'fr-FR' ? 'en-US' : locale.value;
-+          await systemApi.setLanguage(backendLang);
-       } catch (e) {
-           console.warn('Failed to sync language with backend:', e);
-       }
+-      } catch (e) {
+-          console.warn('Failed to sync language with backend:', e);
+-      }
++    try {
++      await systemApi.setLanguage(translationLocale.value);
++    } catch (e) {
++      console.warn('Failed to sync language with backend:', e);
++    }
    }
  
    return {
      locale,
++    uiLocale,
++    translationLocale,
      setLocale,
++    setTranslationLocale,
      syncBackend,
      sfxVolume,
      bgmVolume,
@@ -774,3 +1369,273 @@ index 4b0f08887eadf6b33cb84c531bbafb707525e2ea..6e9d4dd471473c1111887b24298eb546
      setBgmVolume
    };
  });
+diff --git a/web/src/stores/socketMessageRouter.ts b/web/src/stores/socketMessageRouter.ts
+index a7c701139e2652c6256d3e0966436d555124d9f5..fb66b8e453ad9793b73639c5e07b1b7fdf7320f2 100644
+--- a/web/src/stores/socketMessageRouter.ts
++++ b/web/src/stores/socketMessageRouter.ts
+@@ -1,61 +1,65 @@
+ import i18n from '@/locales'
++import { getHtmlLang, normalizeLocale } from '@/locales/localeUtils'
+ import { message } from '@/utils/discreteApi'
+ import { logError, logWarn } from '@/utils/appError'
+ import type {
+   TickPayloadDTO,
+   ToastSocketMessage,
+   LLMConfigRequiredSocketMessage,
+   GameReinitializedSocketMessage,
+   SocketMessageDTO,
+ } from '@/types/api'
+ import type { useUiStore } from '@/stores/ui'
+ import type { useWorldStore } from '@/stores/world'
+ 
+ interface SocketRouterDeps {
+   worldStore: ReturnType<typeof useWorldStore>
+   uiStore: ReturnType<typeof useUiStore>
+ }
+ 
+ function applyLanguageSwitch(language: string) {
++  const normalized = normalizeLocale(language, 'en-US')
++
+   const localeRef = i18n.global.locale as unknown
+   const currentLang = i18n.mode === 'legacy'
+-    ? localeRef as string
+-    : (localeRef as { value: string }).value
++    ? normalizeLocale(localeRef as string, 'en-US')
++    : normalizeLocale((localeRef as { value: string }).value, 'en-US')
+ 
+-  if (currentLang === language) return
++  if (currentLang === normalized) return
+ 
+   if (i18n.mode === 'legacy') {
+-    (i18n.global.locale as unknown as string) = language
++    (i18n.global.locale as unknown as string) = normalized
+   } else {
+-    (i18n.global.locale as unknown as { value: string }).value = language
++    (i18n.global.locale as unknown as { value: string }).value = normalized
+   }
+ 
+-  localStorage.setItem('app_locale', language)
+-  document.documentElement.lang = language.startsWith('zh') ? language : 'en'
++  localStorage.setItem('app_locale', normalized)
++  document.documentElement.lang = getHtmlLang(normalized)
+ }
+ 
++
+ function handleTickMessage(payload: TickPayloadDTO, deps: SocketRouterDeps) {
+   deps.worldStore.handleTick(payload)
+   if (deps.uiStore.selectedTarget) {
+     deps.uiStore.refreshDetail()
+   }
+ }
+ 
+ function handleToastMessage(data: ToastSocketMessage) {
+   const { level, message: msg, language } = data
+   if (level === 'error') message.error(msg)
+   else if (level === 'warning') message.warning(msg)
+   else if (level === 'success') message.success(msg)
+   else message.info(msg)
+ 
+   if (!language) return
+   try {
+     applyLanguageSwitch(language)
+     console.log(`[Socket] Frontend language switched to ${language}`)
+   } catch (e) {
+     logError('SocketRouter switch language', e)
+   }
+ }
+ 
+ function handleLlmConfigRequired(data: LLMConfigRequiredSocketMessage, deps: SocketRouterDeps) {
+   const errorMessage = data.error || 'LLM 连接失败，请配置'
+diff --git a/web/tools/i18n/check-locales.mjs b/web/tools/i18n/check-locales.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..2b44cd44a94c65654954aacb729c4e0c79146db4
+--- /dev/null
++++ b/web/tools/i18n/check-locales.mjs
+@@ -0,0 +1,105 @@
++#!/usr/bin/env node
++import fs from 'node:fs';
++import path from 'node:path';
++
++const LOCALES_DIR = path.resolve(process.cwd(), 'src', 'locales');
++const BASE_LOCALE = 'en-US';
++const TARGET_LOCALES = ['fr-FR'];
++
++function isObject(v) {
++  return v && typeof v === 'object' && !Array.isArray(v);
++}
++
++function flatten(obj, prefix = '') {
++  const out = new Map();
++
++  if (Array.isArray(obj)) {
++    obj.forEach((v, i) => {
++      for (const [k, val] of flatten(v, `${prefix}[${i}]`).entries()) {
++        out.set(k, val);
++      }
++    });
++    return out;
++  }
++
++  if (isObject(obj)) {
++    for (const [k, v] of Object.entries(obj)) {
++      const next = prefix ? `${prefix}.${k}` : k;
++      for (const [kk, val] of flatten(v, next).entries()) {
++        out.set(kk, val);
++      }
++    }
++    return out;
++  }
++
++  out.set(prefix, obj);
++  return out;
++}
++
++function readJson(filePath) {
++  return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
++}
++
++function listJsonFiles(locale) {
++  const dir = path.join(LOCALES_DIR, locale);
++  if (!fs.existsSync(dir)) {
++    return [];
++  }
++
++  return fs
++    .readdirSync(dir)
++    .filter((f) => f.endsWith('.json'))
++    .sort();
++}
++
++const baseFiles = listJsonFiles(BASE_LOCALE);
++if (!baseFiles.length) {
++  console.error(`[i18n] Base locale '${BASE_LOCALE}' has no JSON files in ${LOCALES_DIR}`);
++  process.exit(2);
++}
++
++let failed = false;
++
++for (const locale of TARGET_LOCALES) {
++  const files = listJsonFiles(locale);
++  const missingFiles = baseFiles.filter((f) => !files.includes(f));
++  const extraFiles = files.filter((f) => !baseFiles.includes(f));
++
++  if (missingFiles.length) {
++    failed = true;
++    console.error(`[i18n] ${locale}: missing files -> ${missingFiles.join(', ')}`);
++  }
++
++  if (extraFiles.length) {
++    failed = true;
++    console.error(`[i18n] ${locale}: extra files -> ${extraFiles.join(', ')}`);
++  }
++
++  for (const file of baseFiles) {
++    if (!files.includes(file)) {
++      continue;
++    }
++
++    const baseFlat = flatten(readJson(path.join(LOCALES_DIR, BASE_LOCALE, file)));
++    const targetFlat = flatten(readJson(path.join(LOCALES_DIR, locale, file)));
++
++    const missing = [...baseFlat.keys()].filter((k) => !targetFlat.has(k));
++    const extra = [...targetFlat.keys()].filter((k) => !baseFlat.has(k));
++
++    if (missing.length) {
++      failed = true;
++      console.error(`[i18n] ${locale}/${file}: missing keys -> ${missing.slice(0, 10).join(', ')}${missing.length > 10 ? ' ...' : ''}`);
++    }
++
++    if (extra.length) {
++      failed = true;
++      console.error(`[i18n] ${locale}/${file}: extra keys -> ${extra.slice(0, 10).join(', ')}${extra.length > 10 ? ' ...' : ''}`);
++    }
++  }
++}
++
++if (failed) {
++  process.exit(1);
++}
++
++console.log('[i18n] OK: fr-FR matches en-US');
+diff --git a/web/tools/i18n/detect-hardcoded-ui.mjs b/web/tools/i18n/detect-hardcoded-ui.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..ffc77d5ce6389e254df2a6d12b83909c1aa1850a
+--- /dev/null
++++ b/web/tools/i18n/detect-hardcoded-ui.mjs
+@@ -0,0 +1,76 @@
++#!/usr/bin/env node
++import fs from 'node:fs';
++import path from 'node:path';
++import { parse as parseSfc } from '@vue/compiler-sfc';
++import { parse as parseTemplate, NodeTypes } from '@vue/compiler-dom';
++
++const SRC_DIR = path.resolve(process.cwd(), 'src');
++const ATTR_ALLOW = new Set(['placeholder', 'title', 'aria-label', 'aria-placeholder', 'alt', 'label']);
++
++function walk(dir) {
++  const out = [];
++  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
++    const p = path.join(dir, entry.name);
++    if (entry.isDirectory()) {
++      out.push(...walk(p));
++    } else if (entry.isFile() && p.endsWith('.vue')) {
++      out.push(p);
++    }
++  }
++  return out;
++}
++
++function hasText(str) {
++  const t = str.replace(/\s+/g, ' ').trim();
++  if (!t) return false;
++  return /[A-Za-zÀ-ÖØ-öø-ÿ\u4E00-\u9FFF]/.test(t);
++}
++
++function traverse(node, file, offenders) {
++  if (!node) return;
++
++  if (node.type === NodeTypes.TEXT && hasText(node.content)) {
++    offenders.push({ file, kind: 'text', text: node.content.trim(), loc: node.loc });
++  }
++
++  if (node.type === NodeTypes.ELEMENT) {
++    for (const prop of node.props || []) {
++      if (prop.type === NodeTypes.ATTRIBUTE) {
++        const name = (prop.name || '').toLowerCase();
++        const value = prop.value?.content ?? '';
++        if (ATTR_ALLOW.has(name) && hasText(value)) {
++          offenders.push({ file, kind: `attr:${name}`, text: value.trim(), loc: prop.loc });
++        }
++      }
++    }
++    for (const child of node.children || []) {
++      traverse(child, file, offenders);
++    }
++  } else {
++    for (const child of node.children || []) {
++      traverse(child, file, offenders);
++    }
++  }
++}
++
++const offenders = [];
++for (const file of walk(SRC_DIR)) {
++  const source = fs.readFileSync(file, 'utf-8');
++  const sfc = parseSfc(source, { filename: file });
++  const tpl = sfc.descriptor.template?.content;
++  if (!tpl) continue;
++
++  const ast = parseTemplate(tpl, { comments: false });
++  traverse(ast, file, offenders);
++}
++
++if (offenders.length) {
++  console.error(`[i18n] Hardcoded template strings: ${offenders.length}`);
++  for (const o of offenders.slice(0, 80)) {
++    const pos = o.loc?.start ? `:${o.loc.start.line}:${o.loc.start.column}` : '';
++    console.error(`- ${o.file}${pos} (${o.kind}) \"${o.text.replace(/\s+/g, ' ')}\"`);
++  }
++  process.exit(1);
++}
++
++console.log('[i18n] OK: no hardcoded template strings detected');

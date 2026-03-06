@@ -31,7 +31,8 @@ function applyLanguageSwitch(language: string) {
   }
 
   localStorage.setItem('app_locale', language)
-  document.documentElement.lang = language.startsWith('zh') ? language : 'en'
+  const langMap: Record<string, string> = { 'zh-CN': 'zh-CN', 'zh-TW': 'zh-TW', 'en-US': 'en', 'fr-FR': 'fr' }
+  document.documentElement.lang = langMap[language] || 'en'
 }
 
 function handleTickMessage(payload: TickPayloadDTO, deps: SocketRouterDeps) {
