@@ -18,23 +18,19 @@ interface SocketRouterDeps {
 }
 
 function applyLanguageSwitch(language: string) {
-  const normalized = normalizeLocale(language, 'en-US')
+  // Backend language hint is constrained to runtime CH/EN mode.
+  // Do not overwrite UI locale here.
+  const normalized = normalizeLocale(language, 'zh-CN')
+  const runtimeLocale = normalized === 'en-US' ? 'en-US' : 'zh-CN'
+  localStorage.setItem('app_runtime_locale', runtimeLocale)
 
+  // Keep current UI html lang untouched; UI locale is user-controlled.
+  // Optionally ensure we still have a valid value for accessibility.
   const localeRef = i18n.global.locale as unknown
-  const currentLang = i18n.mode === 'legacy'
-    ? normalizeLocale(localeRef as string, 'en-US')
-    : normalizeLocale((localeRef as { value: string }).value, 'en-US')
-
-  if (currentLang === normalized) return
-
-  if (i18n.mode === 'legacy') {
-    (i18n.global.locale as unknown as string) = normalized
-  } else {
-    (i18n.global.locale as unknown as { value: string }).value = normalized
-  }
-
-  localStorage.setItem('app_locale', normalized)
-  document.documentElement.lang = getHtmlLang(normalized)
+  const currentUi = i18n.mode === 'legacy'
+    ? normalizeLocale(localeRef as string, 'zh-CN')
+    : normalizeLocale((localeRef as { value: string }).value, 'zh-CN')
+  document.documentElement.lang = getHtmlLang(currentUi)
 }
 
 

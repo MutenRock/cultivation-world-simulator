@@ -280,63 +280,27 @@ describe('useSocketStore', () => {
       expect(mockMessage.info).toHaveBeenCalledWith('Unknown level message')
     })
 
-    it('should switch language in composition mode when language field is present', () => {
+    it('should store runtime locale hint when language field is present', () => {
       mockI18nMode = 'composition'
-      mockI18nLocale = { value: 'zh-CN' }
+      mockI18nLocale = { value: 'fr-FR' }
       const localStorageSpy = vi.spyOn(Storage.prototype, 'setItem')
 
       store.init()
       messageCallback?.({ type: 'toast', level: 'info', message: 'Test', language: 'en-US' })
 
-      expect(mockI18nLocale.value).toBe('en-US')
-      expect(localStorageSpy).toHaveBeenCalledWith('app_locale', 'en-US')
+      expect(mockI18nLocale.value).toBe('fr-FR')
+      expect(localStorageSpy).toHaveBeenCalledWith('app_runtime_locale', 'en-US')
       localStorageSpy.mockRestore()
     })
 
-    it('should switch language in legacy mode when language field is present', () => {
-      mockI18nMode = 'legacy'
-      mockI18nLocale = 'zh-CN'
-      const localStorageSpy = vi.spyOn(Storage.prototype, 'setItem')
-
-      store.init()
-      messageCallback?.({ type: 'toast', level: 'info', message: 'Test', language: 'en-US' })
-
-      expect(mockI18nLocale).toBe('en-US')
-      expect(localStorageSpy).toHaveBeenCalledWith('app_locale', 'en-US')
-      localStorageSpy.mockRestore()
-    })
-
-    it('should not switch language if same as current', () => {
+    it('should keep ui html lang based on current ui locale', () => {
       mockI18nMode = 'composition'
-      mockI18nLocale = { value: 'en-US' }
-      const localStorageSpy = vi.spyOn(Storage.prototype, 'setItem')
-
-      store.init()
-      messageCallback?.({ type: 'toast', level: 'info', message: 'Test', language: 'en-US' })
-
-      // Should not call setItem if language is same.
-      expect(localStorageSpy).not.toHaveBeenCalled()
-      localStorageSpy.mockRestore()
-    })
-
-    it('should update document.documentElement.lang for zh-CN', () => {
-      mockI18nMode = 'composition'
-      mockI18nLocale = { value: 'en-US' }
+      mockI18nLocale = { value: 'fr-FR' }
 
       store.init()
       messageCallback?.({ type: 'toast', level: 'info', message: 'Test', language: 'zh-CN' })
 
-      expect(document.documentElement.lang).toBe('zh-CN')
-    })
-
-    it('should update document.documentElement.lang for en-US', () => {
-      mockI18nMode = 'composition'
-      mockI18nLocale = { value: 'zh-CN' }
-
-      store.init()
-      messageCallback?.({ type: 'toast', level: 'info', message: 'Test', language: 'en-US' })
-
-      expect(document.documentElement.lang).toBe('en')
+      expect(document.documentElement.lang).toBe('fr')
     })
 
     it('should handle language switch errors gracefully', () => {

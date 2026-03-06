@@ -3,6 +3,7 @@ import { computed, ref, watch, nextTick, h } from 'vue'
 import { useAvatarStore } from '../../../stores/avatar'
 import { useEventStore } from '../../../stores/event'
 import { useUiStore } from '../../../stores/ui'
+import { useSettingStore } from '../../../stores/setting'
 import { NSelect, NSpin, NButton } from 'naive-ui'
 import type { SelectOption } from 'naive-ui'
 import { tokenizeEventContent, buildAvatarColorMap, avatarIdToColor } from '../../../utils/eventHelper'
@@ -13,6 +14,7 @@ const { t } = useI18n()
 const avatarStore = useAvatarStore()
 const eventStore = useEventStore()
 const uiStore = useUiStore()
+const settingStore = useSettingStore()
 const filterValue1 = ref('all')
 const filterValue2 = ref<string | null>(null)  // null 表示未启用双人筛选
 const eventListRef = ref<HTMLElement | null>(null)
@@ -155,10 +157,90 @@ function formatEventDate(event: { year: number; month: number }) {
 // 构建角色名 -> 颜色映射表。
 const avatarColorMap = computed(() => buildAvatarColorMap(avatarStore.avatarList))
 
+const translatedEventText = ref<Record<string, string>>({})
+const translatingEventIds = ref<Set<string>>(new Set())
+
+const shouldTranslateEventsLocally = computed(() => {
+  return settingStore.localEventTranslationEnabled
+    && settingStore.translationLocale !== settingStore.dataLocale
+})
+
+function applyLocalGlossary(text: string) {
+  // Local lightweight glossary-based translation.
+  // Keeps avatar names/hyperlinks intact by avoiding structural replacements.
+  if (!text) return text
+
+  if (settingStore.dataLocale === 'zh-CN' && settingStore.translationLocale === 'fr-FR') {
+    return text
+      .replace(/突破/g, 'percée')
+      .replace(/击败/g, 'a vaincu')
+      .replace(/获得/g, 'a obtenu')
+      .replace(/修炼/g, 'cultive')
+  }
+
+  if (settingStore.dataLocale === 'zh-CN' && settingStore.translationLocale === 'en-US') {
+    return text
+      .replace(/突破/g, 'breakthrough')
+      .replace(/击败/g, 'defeated')
+      .replace(/获得/g, 'obtained')
+      .replace(/修炼/g, 'cultivates')
+  }
+
+  if (settingStore.dataLocale === 'fr-FR' && settingStore.translationLocale === 'en-US') {
+    return text
+      .replace(/a vaincu/g, 'defeated')
+      .replace(/a obtenu/g, 'obtained')
+      .replace(/cultive/g, 'cultivates')
+  }
+
+  return text
+}
+
+async function translateEventTextLocal(eventId: string, text: string) {
+  if (translatedEventText.value[eventId] || translatingEventIds.value.has(eventId)) return
+  translatingEventIds.value.add(eventId)
+
+  // Simulate async local translation pipeline to avoid blocking UI thread.
+  await new Promise((resolve) => setTimeout(resolve, 80))
+  translatedEventText.value[eventId] = applyLocalGlossary(text)
+
+  translatingEventIds.value.delete(eventId)
+}
+
+watch(
+  [displayEvents, shouldTranslateEventsLocally, () => settingStore.translationLocale, () => settingStore.dataLocale],
+  ([events, enabled]) => {
+    if (!enabled) {
+      translatedEventText.value = {}
+      translatingEventIds.value = new Set()
+      return
+    }
+
+    for (const event of events || []) {
+      const text = event.content || event.text || ''
+      if (text) {
+        void translateEventTextLocal(event.id, text)
+      }
+    }
+  },
+  { immediate: true, deep: true }
+)
+
+
 // 渲染事件内容：拆分为安全 token，避免使用 v-html。
 function renderEventContent(event: GameEvent) {
-  const text = event.content || event.text || ''
-  return tokenizeEventContent(text, avatarColorMap.value)
+  const rawText = event.content || event.text || ''
+
+  if (!shouldTranslateEventsLocally.value) {
+    return tokenizeEventContent(rawText, avatarColorMap.value)
+  }
+
+  const translated = translatedEventText.value[event.id]
+  if (!translated) {
+    return tokenizeEventContent(t('common.loading'), avatarColorMap.value)
+  }
+
+  return tokenizeEventContent(translated, avatarColorMap.value)
 }
 
 function handleAvatarClick(avatarId?: string) {
