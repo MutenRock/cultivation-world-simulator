@@ -1,4 +1,5 @@
 import i18n from '@/locales'
+import { getHtmlLang, normalizeLocale } from '@/locales/localeUtils'
 import { message } from '@/utils/discreteApi'
 import { logError, logWarn } from '@/utils/appError'
 import type {
@@ -17,23 +18,27 @@ interface SocketRouterDeps {
 }
 
 function applyLanguageSwitch(language: string) {
-  const localeRef = i18n.global.locale as unknown
-  const currentLang = i18n.mode === 'legacy'
-    ? localeRef as string
-    : (localeRef as { value: string }).value
+  // Backend language hint is constrained to runtime CH/EN mode.
+  // Do not overwrite UI locale here.
+  const normalized = normalizeLocale(language, 'zh-CN')
+  const runtimeLocale = normalized === 'en-US' ? 'en-US' : 'zh-CN'
+  localStorage.setItem('app_runtime_locale', runtimeLocale)
 
-  if (currentLang === language) return
-
-  if (i18n.mode === 'legacy') {
-    (i18n.global.locale as unknown as string) = language
-  } else {
-    (i18n.global.locale as unknown as { value: string }).value = language
-  }
-
+<<<<<<< ours
   localStorage.setItem('app_locale', language)
   const langMap: Record<string, string> = { 'zh-CN': 'zh-CN', 'zh-TW': 'zh-TW', 'en-US': 'en', 'fr-FR': 'fr' }
   document.documentElement.lang = langMap[language] || 'en'
+=======
+  // Keep current UI html lang untouched; UI locale is user-controlled.
+  // Optionally ensure we still have a valid value for accessibility.
+  const localeRef = i18n.global.locale as unknown
+  const currentUi = i18n.mode === 'legacy'
+    ? normalizeLocale(localeRef as string, 'zh-CN')
+    : normalizeLocale((localeRef as { value: string }).value, 'zh-CN')
+  document.documentElement.lang = getHtmlLang(currentUi)
+>>>>>>> theirs
 }
+
 
 function handleTickMessage(payload: TickPayloadDTO, deps: SocketRouterDeps) {
   deps.worldStore.handleTick(payload)

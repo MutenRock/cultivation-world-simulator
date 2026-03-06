@@ -32,5 +32,12 @@
   "about_github_desc": "This is an open-source project. If you have a GitHub account, please support us with a Star!",
   "about_contributors": "Contributors",
   "about_contributors_desc": "Thanks to all the creators who contributed to this open-source project!",
+<<<<<<< ours
   "translation_language": "Translation Language"
+=======
+  "translation_language": "Translation Language",
+  "runtime_language_mode": "Runtime Language Mode (CH/EN)",
+  "dataset_language": "Data Set Language",
+  "local_event_translation": "Enable local event translation"
+>>>>>>> theirs
 }

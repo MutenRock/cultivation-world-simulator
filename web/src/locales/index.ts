@@ -1,4 +1,5 @@
 import { createI18n } from 'vue-i18n';
+import { normalizeLocale } from './localeUtils';
 
 /**
  * 自动加载指定语言目录下的所有 JSON 模块
@@ -42,7 +43,7 @@ type MessageSchema = typeof messages['en-US'];
 
 const i18n = createI18n<[MessageSchema], 'en-US' | 'zh-CN' | 'zh-TW' | 'fr-FR'>({
   legacy: false, // 使用 Composition API 模式
-  locale: localStorage.getItem('app_locale') || 'zh-CN', // 默认语言
+  locale: normalizeLocale(localStorage.getItem('app_locale')), // 默认语言
   fallbackLocale: 'en-US', // 回退语言
   messages: messages as any
 });

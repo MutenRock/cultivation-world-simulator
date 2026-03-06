@@ -32,5 +32,12 @@
   "about_github_desc": "本項目是開源項目，如果你有 GitHub 帳號，請多多點 Star 支持！",
   "about_contributors": "貢獻者名單",
   "about_contributors_desc": "感謝所有參與了開源的創作者們！",
+<<<<<<< ours
   "translation_language": "翻譯語言"
+=======
+  "translation_language": "翻譯語言",
+  "runtime_language_mode": "運行語言模式（僅中文/英文）",
+  "dataset_language": "資料集語言",
+  "local_event_translation": "啟用本地事件翻譯"
+>>>>>>> theirs
 }
