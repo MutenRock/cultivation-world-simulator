@@ -1,0 +1,149 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: cultivation-world-simulator 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-20 00:00+0000\n"
+"PO-Revision-Date: 2024-01-20 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: fr-FR\n"
+"Language: fr_FR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid " (and sold old {item} at reduced price)"
+msgstr " (et a vendu l’ancien {item} à prix réduit)"
+
+msgid "Animal realms in current area exceed character realm"
+msgstr "Le niveau des animaux de la zone dépasse celui du personnage"
+
+msgid "Assassination failed! Both sides engaged in fierce battle."
+msgstr "Assassinat raté ! Les deux camps se sont engagés dans un combat acharné."
+
+msgid "Breakthrough failed"
+msgstr "Percée échouée"
+
+msgid "Breakthrough succeeded"
+msgstr "Percée réussie"
+
+msgid "Can only execute in city areas"
+msgstr "L’exécution n’est possible que dans les zones urbaines"
+
+msgid "Cannot resolve region: {region}"
+msgstr "Impossible de résoudre la région : {region}"
+
+msgid "Cannot sell this type: {name}"
+msgstr "Impossible de vendre ce type : {name}"
+
+msgid "Casting succeeded! Obtained {realm} {label} '{item}'"
+msgstr "Lancement réussi ! Obtenu : {label} {realm} « {item} »"
+
+msgid "Cultivation has reached bottleneck, cannot continue cultivating"
+msgstr "La cultivation a atteint un goulot d’étranglement, impossible de continuer"
+
+msgid "Current HP is full"
+msgstr "Les PV actuels sont au maximum"
+
+msgid "Current area {region} has no animals"
+msgstr "La zone actuelle {region} ne contient aucun animal"
+
+msgid "Do not possess equipment: {name}"
+msgstr "Vous ne possédez pas cet équipement : {name}"
+
+msgid "Do not possess item/equipment: {name}"
+msgstr "Vous ne possédez pas l’objet/équipement : {name}"
+
+msgid "Do not possess material: {name}"
+msgstr "Vous ne possédez pas le matériau : {name}"
+
+msgid ""
+"Forbidden illegal action (missing Ten Thousand Souls Banner or permission)"
+msgstr "Action illégale interdite (bannière des Dix Mille Âmes ou autorisation manquante)"
+
+msgid ""
+"Insufficient materials, need {cost} {realm}-tier materials, currently have "
+"{count}"
+msgstr "Matériaux insuffisants : besoin de {cost} matériaux de rang {realm}, vous en avez {count}"
+
+msgid "Insufficient spirit stones"
+msgstr "Pierres spirituelles insuffisantes"
+
+msgid "Invalid direction: {direction}"
+msgstr "Direction invalide : {direction}"
+
+msgid "Invalid realm: {realm}"
+msgstr "Royaume invalide : {realm}"
+
+msgid "Missing HP information"
+msgstr "Informations de PV manquantes"
+
+msgid "Missing target parameter"
+msgstr "Paramètre de cible manquant"
+
+msgid "Must be in a City to educate people."
+msgstr "Vous devez être en ville pour éduquer les habitants."
+
+msgid "Not at bottleneck, cannot breakthrough"
+msgstr "Pas de goulot d’étranglement, percée impossible"
+
+msgid "Not currently in normal area"
+msgstr "Vous n’êtes pas actuellement dans une zone normale"
+
+msgid "Only evil alignment can execute"
+msgstr "Seuls les alignements maléfiques peuvent exécuter"
+
+msgid "Only righteous alignment can execute"
+msgstr "Seuls les alignements vertueux peuvent exécuter"
+
+msgid "Refining succeeded! Obtained {realm} elixir '{item}'"
+msgstr "Raffinage réussi ! Obtenu : élixir {realm} « {item} »"
+
+msgid "Target does not exist"
+msgstr "La cible n’existe pas"
+
+msgid "Target is already dead"
+msgstr "La cible est déjà morte"
+
+msgid "Target realm not specified"
+msgstr "Royaume de la cible non spécifié"
+
+msgid "The prosperity of {city} has increased due to {avatar}'s teachings."
+msgstr "La prospérité de {city} a augmenté grâce à l’enseignement de {avatar}."
+
+msgid "This area has no shop"
+msgstr "Cette zone n’a pas de boutique"
+
+msgid "This cave dwelling has been occupied by {name}, cannot respire"
+msgstr "Cette demeure troglodyte est occupée par {name}, impossible de respirer/occuper"
+
+msgid "Unknown item: {name}"
+msgstr "Objet inconnu : {name}"
+
+msgid "Your orthodoxy does not support Body Tempering."
+msgstr "Votre orthodoxie ne permet pas le Renforcement du corps."
+
+msgid "Your orthodoxy does not support Confucian Education."
+msgstr "Votre orthodoxie ne permet pas l’Éducation confucéenne."
+
+msgid "Your orthodoxy does not support Qi Respiration."
+msgstr "Votre orthodoxie ne permet pas la Respiration du Qi."
+
+msgid "Your orthodoxy does not support Zen Meditation."
+msgstr "Votre orthodoxie ne permet pas la Méditation zen."
+
+msgid ""
+"[{region}] is another sect's territory, you are not a disciple of that sect"
+msgstr "[{region}] est le territoire d’une autre secte, vous n’en êtes pas disciple"
+
+msgid "action_chess"
+msgstr "Jeu d’échecs"
+
+msgid "action_chess_desc"
+msgstr "Jouer une partie d’échecs pour passer le temps et aiguiser l’esprit."
+
+msgid "action_chess_story_prompt"
+msgstr "Décris une partie d’échecs dans un monde de cultivation, avec tension, stratégie et symbolisme."
+
+msgid "action_devourpeople_short_name"
+msgstr "Dévorer des gens"

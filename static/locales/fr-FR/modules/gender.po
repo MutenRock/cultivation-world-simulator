@@ -1,0 +1,45 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: cultivation-world-simulator 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-20 00:00+0000\n"
+"PO-Revision-Date: 2024-01-20 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: fr-FR\n"
+"Language: fr_FR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid ""
+"Event: Hidden Domain Opening\n"
+"Name: {name}\n"
+"Description: {desc}"
+msgstr "Événement : Ouverture d’un domaine caché\\nNom : {name}\\nDescription : {desc}"
+
+msgid "Hidden Domain {name} opened! Entry restricted to {realm} only."
+msgstr "Le domaine caché {name} s’est ouvert ! Entrée réservée au royaume {realm} uniquement."
+
+msgid ""
+"Hidden Domain {name} opened! Entry restricted to {realm} only. Entrants: "
+"{entrants}"
+msgstr "Le domaine caché {name} s’est ouvert ! Entrée réservée au royaume {realm} uniquement. Participants : {entrants}"
+
+msgid ""
+"Hidden Domain {name} opened! Entry restricted to {realm} only. No one "
+"entered."
+msgstr "Le domaine caché {name} s’est ouvert ! Entrée réservée au royaume {realm} uniquement. Personne n’est entré."
+
+msgid "Hidden Domains opened: {names}"
+msgstr "Domaines cachés ouverts : {names}"
+
+msgid "Perished in a Hidden Domain"
+msgstr "Mort dans un domaine caché"
+
+msgid "found a treasure"
+msgstr "a trouvé un trésor"
+
+# Gender
+msgid "male"
+msgstr "homme"
